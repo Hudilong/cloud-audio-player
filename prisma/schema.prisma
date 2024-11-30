@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // Optional for manual credentials
+  accounts      Account[] // Relation to Account model
+  sessions      Session[] // Relation to Session model
+  audios        Audio[] // User's uploaded audios
+  playbackState PlaybackState? @relation("UserPlaybackState")
+  Playlist      Playlist[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? // OAuth refresh token
+  access_token      String? // OAuth access token
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Audio {
+  id             String          @id @default(cuid())
+  title          String?
+  artist         String?
+  album          String?
+  genre          String?
+  imageURL       String?
+  duration       Int // Duration in seconds
+  s3Key          String
+  userId         String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlistTracks PlaylistTrack[]
+  playbackState  PlaybackState?  @relation("AudioPlaybackState")
+}
+
+model PlaybackState {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  audioId           String?  @unique
+  position          Float    @default(0)
+  isPlaying         Boolean  @default(false)
+  volume            Float    @default(1.0)
+  shuffle           Boolean  @default(false)
+  repeat            Boolean  @default(false)
+  currentTrackIndex Int      @default(0)
+  tracks            Json     @default("[]")
+  updatedAt         DateTime @updatedAt
+  user              User     @relation("UserPlaybackState", fields: [userId], references: [id], onDelete: Cascade)
+  audio             Audio?   @relation("AudioPlaybackState", fields: [audioId], references: [id], onDelete: Cascade)
+}
+
+model Playlist {
+  id             String          @id @default(cuid())
+  name           String
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+  playlistTracks PlaylistTrack[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  audioId    String
+  position   Int
+  addedAt    DateTime @default(now())
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  audio      Audio    @relation(fields: [audioId], references: [id])
+
+  @@unique([playlistId, position])
+}
