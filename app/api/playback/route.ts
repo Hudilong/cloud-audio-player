@@ -31,9 +31,6 @@ export async function GET() {
             );
         }
 
-        // Ownership check is redundant here because the audio must belong to the user
-        // due to the way we set up the playbackState and audio models
-
         return NextResponse.json(
             {
                 audioId: playbackState.audioId,

@@ -3,7 +3,7 @@ import prisma from "@/../utils/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
-export async function POST(request: NextRequest) {
+export async function PUT(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
                 title,
                 artist,
                 album,
-                duration: parseInt(duration), // Duration in seconds
+                duration: duration, // Duration in seconds
                 s3Key,
                 userId: user.id,
             },
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Get all tracks for the authenticated user
-        const track = await prisma.audio.findUniqueOrThrow({
+        const track = await prisma.audio.findUnique({
             where: {
                 id,
             },

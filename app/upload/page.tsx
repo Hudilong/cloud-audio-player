@@ -18,6 +18,7 @@ const UploadPage = () => {
         album: "",
         duration: 0,
         genre: "",
+        imageURL: "",
     });
     const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
@@ -57,6 +58,7 @@ const UploadPage = () => {
                 title: metadataResult.common.title || "",
                 artist: metadataResult.common.artist || "",
                 album: metadataResult.common.album || "",
+                imageURL: null,
                 genre: metadataResult.common.genre?.[0] || "", // Optional genre handling
                 duration: Math.floor(durationInSeconds), // Return duration as a number
             };
