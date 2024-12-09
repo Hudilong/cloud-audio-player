@@ -31,6 +31,7 @@ module.exports = {
         ignoreFunctionalComponents: true,
       },
     ],
+    'import/prefer-default-export': 'off',
     // Custom overrides if needed, for example:
     // 'react/jsx-props-no-spreading': 'off',
     // 'prettier/prettier': 'error',
