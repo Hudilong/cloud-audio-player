@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import AWS from "aws-sdk";
 import { nanoid } from "nanoid";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/api/auth/[...nextauth]/route";
+import { authOptions } from "../../../../utils/authOptions";
 
 AWS.config.update({
   region: process.env.S3_REGION!,

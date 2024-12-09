@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import AWS from "aws-sdk";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/api/auth/[...nextauth]/route";
 import prisma from "@/../utils/prisma";
+import { authOptions } from "../../../../utils/authOptions";
 
 AWS.config.update({
   region: process.env.S3_REGION!,
