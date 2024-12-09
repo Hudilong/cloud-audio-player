@@ -12,7 +12,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-export default async function POST(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
