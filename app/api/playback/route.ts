@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '../../../utils/authOptions';
@@ -38,8 +37,7 @@ export async function GET() {
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error('Error fetching playback state:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },
@@ -89,8 +87,7 @@ export async function POST(request: NextRequest) {
       { message: 'Playback state updated' },
       { status: 200 },
     );
-  } catch (error) {
-    console.error('Error updating playback state:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },

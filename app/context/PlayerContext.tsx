@@ -1,6 +1,13 @@
 'use client';
 
-import React, { createContext, useEffect, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from 'react';
 import { Audio } from '@prisma/client';
 
 interface PlayerContextProps {
@@ -44,80 +51,40 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
   const [isRepeat, setIsRepeat] = useState<boolean>(false);
 
-  // Toggle play/pause
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch((error) => {
-        console.error('Error playing audio:', error);
-      });
+      audioRef.current.play().catch(() => {});
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [audioRef, isPlaying]);
 
-  // Toggle mute/unmute
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.muted = !isMuted;
     setIsMuted(!isMuted);
-  };
+  }, [audioRef, isMuted]);
 
-  // Handle seeking within the track
-  const handleSeek = (time: number) => {
+  const handleSeek = useCallback((time: number) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setCurrentTime(time);
-  };
+  }, []);
 
-  // Handle volume change
-  const handleVolumeChange = (newVolume: number) => {
+  const handleVolumeChange = useCallback((newVolume: number) => {
     setVolume(newVolume);
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
     }
-  };
+  }, []);
 
-  // Handle Previous Track
-  const handlePrevious = () => {
-    if (isShuffle) {
-      playRandomTrack();
-    } else {
-      if (currentTrackIndex > 0) {
-        setCurrentTrackIndex(currentTrackIndex - 1);
-      } else {
-        if (isRepeat) {
-          setCurrentTrackIndex(playlist.length - 1);
-        }
-        // Optional: else, do nothing or restart current track
-      }
-    }
-  };
-
-  // Handle Next Track
-  const handleNext = () => {
-    if (isShuffle) {
-      playRandomTrack();
-    } else {
-      if (currentTrackIndex < playlist.length - 1) {
-        setCurrentTrackIndex(currentTrackIndex + 1);
-      } else {
-        if (isRepeat) {
-          setCurrentTrackIndex(0);
-        }
-        // Optional: else, do nothing or stop playback
-      }
-    }
-  };
-
-  // Helper function to play a random track
-  const playRandomTrack = () => {
+  const playRandomTrack = useCallback(() => {
     if (playlist.length === 0) return;
 
     let randomIndex = Math.floor(Math.random() * playlist.length);
 
-    // Ensure that the same track is not played again if there's more than one track
     if (playlist.length > 1) {
       while (randomIndex === currentTrackIndex) {
         randomIndex = Math.floor(Math.random() * playlist.length);
@@ -125,63 +92,109 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
 
     setCurrentTrackIndex(randomIndex);
-  };
+  }, [playlist, currentTrackIndex]);
 
-  // Update audio source when currentTrackIndex changes
+  const handlePrevious = useCallback(() => {
+    if (isShuffle) {
+      playRandomTrack();
+    } else if (currentTrackIndex > 0) {
+      setCurrentTrackIndex(currentTrackIndex - 1);
+    } else if (isRepeat) {
+      setCurrentTrackIndex(playlist.length - 1);
+    }
+  }, [
+    isShuffle,
+    currentTrackIndex,
+    isRepeat,
+    playlist.length,
+    playRandomTrack,
+  ]);
+
+  const handleNext = useCallback(() => {
+    if (isShuffle) {
+      playRandomTrack();
+    } else if (currentTrackIndex < playlist.length - 1) {
+      setCurrentTrackIndex(currentTrackIndex + 1);
+    } else if (isRepeat) {
+      setCurrentTrackIndex(0);
+    }
+  }, [
+    isShuffle,
+    currentTrackIndex,
+    playlist.length,
+    isRepeat,
+    playRandomTrack,
+  ]);
+
   useEffect(() => {
     if (!audioRef.current || !playlist[currentTrackIndex]) return;
     setAudio(playlist[currentTrackIndex]);
 
     if (isPlaying) {
-      audioRef.current.play().catch((error) => {
-        console.error('Error playing audio:', error);
-      });
+      audioRef.current.play().catch(() => {});
     }
   }, [currentTrackIndex, playlist, isPlaying]);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audioPlayer = audioRef.current;
 
     const updateTime = () => {
-      setCurrentTime(audio.currentTime);
+      if (audioPlayer) {
+        setCurrentTime(audioPlayer.currentTime);
+      }
     };
 
-    audio.addEventListener('timeupdate', updateTime);
+    audioPlayer?.addEventListener('timeupdate', updateTime);
 
     return () => {
-      audio.removeEventListener('timeupdate', updateTime);
+      audioPlayer?.removeEventListener('timeupdate', updateTime);
     };
   }, []);
 
+  const value = useMemo(
+    () => ({
+      audioRef,
+      audio,
+      currentTime,
+      isPlaying,
+      playlist,
+      currentTrackIndex,
+      volume,
+      isShuffle,
+      isRepeat,
+      setAudio,
+      setCurrentTime,
+      setIsPlaying,
+      setPlaylist,
+      setCurrentTrackIndex,
+      setIsShuffle,
+      setIsRepeat,
+      handleSeek,
+      togglePlayPause,
+      toggleMute,
+      handleVolumeChange,
+      handlePrevious,
+      handleNext,
+    }),
+    [
+      audio,
+      currentTime,
+      isPlaying,
+      playlist,
+      currentTrackIndex,
+      volume,
+      isShuffle,
+      isRepeat,
+      handlePrevious,
+      handleNext,
+      togglePlayPause,
+      toggleMute,
+      handleVolumeChange,
+      handleSeek,
+    ],
+  );
+
   return (
-    <PlayerContext.Provider
-      value={{
-        audioRef,
-        audio,
-        currentTime,
-        isPlaying,
-        playlist,
-        currentTrackIndex,
-        volume,
-        isShuffle,
-        isRepeat,
-        setAudio,
-        setCurrentTime,
-        setIsPlaying,
-        setPlaylist,
-        setCurrentTrackIndex,
-        setIsShuffle,
-        setIsRepeat,
-        handleSeek,
-        togglePlayPause,
-        toggleMute,
-        handleVolumeChange,
-        handlePrevious,
-        handleNext,
-      }}
-    >
-      {children}
-    </PlayerContext.Provider>
+    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
   );
 }

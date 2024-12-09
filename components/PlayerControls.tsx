@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { PlayerContext } from '@/context/PlayerContext';
 import { FaPlay, FaPause, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
-const PlayerControls = () => {
+function PlayerControls() {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
@@ -15,21 +15,21 @@ const PlayerControls = () => {
   return (
     <div className="flex items-center space-x-4">
       {/* Previous Button */}
-      <button onClick={handlePrevious}>
+      <button type="button" onClick={handlePrevious}>
         <FaArrowLeft />
       </button>
 
       {/* Play/Pause Button */}
-      <button onClick={togglePlayPause}>
+      <button type="button" onClick={togglePlayPause}>
         {isPlaying ? <FaPause /> : <FaPlay />}
       </button>
 
       {/* Next Button */}
-      <button onClick={handleNext}>
+      <button type="button" onClick={handleNext}>
         <FaArrowRight />
       </button>
     </div>
   );
-};
+}
 
 export default PlayerControls;

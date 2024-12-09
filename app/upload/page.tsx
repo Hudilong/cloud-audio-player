@@ -4,10 +4,10 @@ import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { parseBlob } from 'music-metadata-browser';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import FileUploadForm from '../../components/FileUploadForm';
 import { TrackInfo } from '@/types';
+import FileUploadForm from '../../components/FileUploadForm';
 
-const UploadPage = () => {
+function UploadPage() {
   const { status } = useSession();
   const router = useRouter();
 
@@ -20,7 +20,7 @@ const UploadPage = () => {
     genre: '',
     imageURL: '',
   });
-  const [error, setError] = useState('');
+  const [errorDisplay, setErrorDisplay] = useState('');
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -33,6 +33,22 @@ const UploadPage = () => {
     return <p>Loading...</p>;
   }
 
+  const extractMetadata = async (file: File): Promise<TrackInfo> => {
+    const metadataResult = await parseBlob(file);
+
+    // Extract metadata fields
+    const durationInSeconds = metadataResult.format.duration || 0;
+
+    return {
+      title: metadataResult.common.title || '',
+      artist: metadataResult.common.artist || '',
+      album: metadataResult.common.album || '',
+      imageURL: null,
+      genre: metadataResult.common.genre?.[0] || '', // Optional genre handling
+      duration: Math.floor(durationInSeconds), // Return duration as a number
+    };
+  };
+
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -40,31 +56,9 @@ const UploadPage = () => {
       try {
         const metadata = await extractMetadata(file);
         setTrackInfo(metadata);
-      } catch (err) {
-        setError('Failed to extract metadata.');
-        console.error(err);
+      } catch {
+        setErrorDisplay('Failed to extract metadata.');
       }
-    }
-  };
-
-  const extractMetadata = async (file: File): Promise<TrackInfo> => {
-    try {
-      const metadataResult = await parseBlob(file);
-
-      // Extract metadata fields
-      const durationInSeconds = metadataResult.format.duration || 0;
-
-      return {
-        title: metadataResult.common.title || '',
-        artist: metadataResult.common.artist || '',
-        album: metadataResult.common.album || '',
-        imageURL: null,
-        genre: metadataResult.common.genre?.[0] || '', // Optional genre handling
-        duration: Math.floor(durationInSeconds), // Return duration as a number
-      };
-    } catch (error) {
-      console.error('Error extracting metadata:', error);
-      throw error;
     }
   };
 
@@ -74,11 +68,23 @@ const UploadPage = () => {
     setTrackInfo({ ...trackInfo, [e.target.name]: e.target.value });
   };
 
+  const resetForm = () => {
+    setSelectedFile(null);
+    setTrackInfo({
+      title: '',
+      artist: '',
+      album: '',
+      imageURL: '',
+      duration: 0,
+      genre: '',
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!selectedFile) {
-      setError('No file selected');
+      setErrorDisplay('No file selected');
       return;
     }
 
@@ -115,21 +121,10 @@ const UploadPage = () => {
       resetForm();
       router.push('/library');
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
+      setErrorDisplay(err.message || 'An unexpected error occurred');
     } finally {
       setUploading(false);
     }
-  };
-
-  const resetForm = () => {
-    setSelectedFile(null);
-    setTrackInfo({
-      title: '',
-      artist: '',
-      album: '',
-      duration: 0,
-      genre: '',
-    });
   };
 
   return (
@@ -138,7 +133,9 @@ const UploadPage = () => {
         <h1 className="text-2xl font-bold text-center text-textLight dark:text-textDark mb-4">
           Upload Track
         </h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {errorDisplay && (
+          <p className="text-red-500 text-center mb-4">{errorDisplay}</p>
+        )}
         <FileUploadForm
           selectedFile={selectedFile}
           metadata={trackInfo}
@@ -150,6 +147,6 @@ const UploadPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default UploadPage;

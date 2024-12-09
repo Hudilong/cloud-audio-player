@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent } from 'react';
-import InputField from './InputField';
 import { TrackInfo } from '@/types';
+import InputField from './InputField';
 
 const trackInfoKeys: (keyof TrackInfo)[] = [
   'title',
@@ -10,7 +10,7 @@ const trackInfoKeys: (keyof TrackInfo)[] = [
   'duration',
 ];
 
-const FileUploadForm = ({
+function FileUploadForm({
   selectedFile,
   metadata,
   uploading,
@@ -24,20 +24,24 @@ const FileUploadForm = ({
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: FormEvent) => void;
-}) => {
+}) {
   return (
     <form onSubmit={onSubmit}>
       <div className="mb-4">
-        <label className="block text-textLight dark:text-textDark font-medium mb-2">
+        <label
+          htmlFor="file"
+          className="block text-textLight dark:text-textDark font-medium mb-2"
+        >
           Select Audio File
+          <input
+            id="file"
+            type="file"
+            accept="audio/*"
+            onChange={onFileChange}
+            className="w-full text-textLight dark:text-textDark"
+            required
+          />
         </label>
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={onFileChange}
-          className="w-full text-textLight dark:text-textDark"
-          required
-        />
       </div>
       {selectedFile && (
         <>
@@ -61,6 +65,6 @@ const FileUploadForm = ({
       </button>
     </form>
   );
-};
+}
 
 export default FileUploadForm;

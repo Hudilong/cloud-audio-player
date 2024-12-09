@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, FormEvent } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 
-const LoginPage = () => {
+function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -40,6 +40,7 @@ const LoginPage = () => {
         </h1>
         {errorMsg && <p className="text-red-500 text-center">{errorMsg}</p>}
         <button
+          type="button"
           onClick={handleGoogleSignIn}
           className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md shadow-sm hover:bg-gray-50"
         >
@@ -50,42 +51,50 @@ const LoginPage = () => {
           <span className="absolute px-2 text-gray-500 bg-white dark:bg-gray-800">
             OR
           </span>
-          <div className="w-full h-px bg-gray-300 dark:bg-gray-600"></div>
+          <div className="w-full h-px bg-gray-300 dark:bg-gray-600" />
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-textLight dark:text-textDark"
+            >
               Email
+              <input
+                id="email"
+                type="email"
+                value={userInfo.email}
+                onChange={(e) =>
+                  setUserInfo({
+                    ...userInfo,
+                    email: e.target.value,
+                  })
+                }
+                required
+                className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+              />
             </label>
-            <input
-              type="email"
-              value={userInfo.email}
-              onChange={(e) =>
-                setUserInfo({
-                  ...userInfo,
-                  email: e.target.value,
-                })
-              }
-              required
-              className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
-            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-textLight dark:text-textDark"
+            >
               Password
+              <input
+                id="password"
+                type="password"
+                value={userInfo.password}
+                onChange={(e) =>
+                  setUserInfo({
+                    ...userInfo,
+                    password: e.target.value,
+                  })
+                }
+                required
+                className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+              />
             </label>
-            <input
-              type="password"
-              value={userInfo.password}
-              onChange={(e) =>
-                setUserInfo({
-                  ...userInfo,
-                  password: e.target.value,
-                })
-              }
-              required
-              className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
-            />
           </div>
           <button
             type="submit"
@@ -106,6 +115,6 @@ const LoginPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;

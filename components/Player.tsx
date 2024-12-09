@@ -7,7 +7,7 @@ import PlayerControls from './PlayerControls';
 import ExtraControls from './ExtraControls';
 import ProgressBar from './ProgressBar';
 
-const Player = () => {
+function Player() {
   const playerContext = useContext(PlayerContext);
   const [streamURL, setStreamURL] = useState<string | null>(null);
 
@@ -32,11 +32,9 @@ const Player = () => {
         if (res.ok) {
           const data = await res.json();
           setStreamURL(data.streamURL);
-        } else {
-          console.error('Failed to fetch tracks');
         }
-      } catch (error) {
-        console.error('Error fetching tracks:', error);
+      } catch {
+        setStreamURL('');
       }
     }
     if (audio && audio.id) fetchStreamURL(audio.id);
@@ -47,37 +45,36 @@ const Player = () => {
   }, [streamURL, audioRef]);
 
   return (
-    <>
-      {audio && streamURL && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 shadow-md">
-          <audio
-            ref={audioRef}
-            src={streamURL}
-            onTimeUpdate={() => {
-              if (audioRef.current) {
-                setCurrentTime(audioRef.current.currentTime);
-              }
-            }}
-            onEnded={() => {
-              if (isRepeat) {
-                setCurrentTime(0);
-                setIsPlaying(true);
-              } else {
-                handleNext();
-              }
-            }}
-            autoPlay
-          />
-          <div className="flex items-center justify-between">
-            <PlayerControls />
-            <TrackInfoDisplay />
-            <ExtraControls />
-          </div>
-          <ProgressBar />
+    audio &&
+    streamURL && (
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 shadow-md">
+        <audio
+          ref={audioRef}
+          src={streamURL}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setCurrentTime(audioRef.current.currentTime);
+            }
+          }}
+          onEnded={() => {
+            if (isRepeat) {
+              setCurrentTime(0);
+              setIsPlaying(true);
+            } else {
+              handleNext();
+            }
+          }}
+          autoPlay
+        />
+        <div className="flex items-center justify-between">
+          <PlayerControls />
+          <TrackInfoDisplay />
+          <ExtraControls />
         </div>
-      )}
-    </>
+        <ProgressBar />
+      </div>
+    )
   );
-};
+}
 
 export default Player;

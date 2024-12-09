@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { PlayerContext } from '@/context/PlayerContext';
 
-const TrackInfoDisplay = () => {
+function TrackInfoDisplay() {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
@@ -20,6 +20,6 @@ const TrackInfoDisplay = () => {
       </span>
     </div>
   );
-};
+}
 
 export default TrackInfoDisplay;

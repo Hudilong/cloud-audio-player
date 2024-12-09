@@ -3,7 +3,7 @@ import { PlayerContext } from '@/context/PlayerContext';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { FaVolumeUp, FaVolumeMute, FaRandom, FaRedo } from 'react-icons/fa';
 
-const ExtraControls = () => {
+function ExtraControls() {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
@@ -23,6 +23,7 @@ const ExtraControls = () => {
     <div className="flex items-center space-x-4 relative">
       {/* Shuffle Button */}
       <button
+        type="button"
         onClick={() => setIsShuffle(!isShuffle)}
         className={`text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white ${
           isShuffle ? 'text-accentLight dark:text-accentDark' : ''
@@ -34,6 +35,7 @@ const ExtraControls = () => {
 
       {/* Repeat Button */}
       <button
+        type="button"
         onClick={() => setIsRepeat(!isRepeat)}
         className={`text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white ${
           isRepeat ? 'text-accentLight dark:text-accentDark' : ''
@@ -69,6 +71,6 @@ const ExtraControls = () => {
       </Popover>
     </div>
   );
-};
+}
 
 export default ExtraControls;

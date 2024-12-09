@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
-const UserMenu = () => {
+function UserMenu() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   if (status === 'loading') {
-    return (
-      <div className="animate-pulse w-8 h-8 bg-gray-300 rounded-full"></div>
-    );
+    return <div className="animate-pulse w-8 h-8 bg-gray-300 rounded-full" />;
   }
 
   if (session && session.user) {
@@ -37,6 +35,7 @@ const UserMenu = () => {
           <MenuItem>
             {({ focus }) => (
               <button
+                type="button"
                 onClick={() => router.push('/settings')}
                 className={`${
                   focus ? 'bg-gray-100 dark:bg-gray-700' : ''
@@ -49,6 +48,7 @@ const UserMenu = () => {
           <MenuItem>
             {({ focus }) => (
               <button
+                type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className={`${
                   focus ? 'bg-gray-100 dark:bg-gray-700' : ''
@@ -61,16 +61,16 @@ const UserMenu = () => {
         </MenuItems>
       </Menu>
     );
-  } else {
-    return (
-      <button
-        onClick={() => signIn()}
-        className="px-4 py-2 text-white bg-accentLight dark:bg-accentDark rounded-md hover:bg-opacity-90 focus:outline-none"
-      >
-        Sign In
-      </button>
-    );
   }
-};
+  return (
+    <button
+      type="button"
+      onClick={() => signIn()}
+      className="px-4 py-2 text-white bg-accentLight dark:bg-accentDark rounded-md hover:bg-opacity-90 focus:outline-none"
+    >
+      Sign In
+    </button>
+  );
+}
 
 export default UserMenu;

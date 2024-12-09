@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, FormEvent } from 'react';
 
-const RegisterPage = () => {
+function RegisterPage() {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState({
     name: '',
@@ -37,55 +37,67 @@ const RegisterPage = () => {
         {errorMsg && <p className="text-red-500 text-center">{errorMsg}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-textLight dark:text-textDark"
+            >
               Name
+              <input
+                id="username"
+                type="text"
+                value={userInfo.name}
+                onChange={(e) =>
+                  setUserInfo({
+                    ...userInfo,
+                    name: e.target.value,
+                  })
+                }
+                required
+                className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+              />
             </label>
-            <input
-              type="text"
-              value={userInfo.name}
-              onChange={(e) =>
-                setUserInfo({
-                  ...userInfo,
-                  name: e.target.value,
-                })
-              }
-              required
-              className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
-            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-textLight dark:text-textDark"
+            >
               Email
+              <input
+                id="email"
+                type="email"
+                value={userInfo.email}
+                onChange={(e) =>
+                  setUserInfo({
+                    ...userInfo,
+                    email: e.target.value,
+                  })
+                }
+                required
+                className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+              />
             </label>
-            <input
-              type="email"
-              value={userInfo.email}
-              onChange={(e) =>
-                setUserInfo({
-                  ...userInfo,
-                  email: e.target.value,
-                })
-              }
-              required
-              className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
-            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-textLight dark:text-textDark"
+            >
               Password
+              <input
+                id="password"
+                type="password"
+                value={userInfo.password}
+                onChange={(e) =>
+                  setUserInfo({
+                    ...userInfo,
+                    password: e.target.value,
+                  })
+                }
+                required
+                className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+              />
             </label>
-            <input
-              type="password"
-              value={userInfo.password}
-              onChange={(e) =>
-                setUserInfo({
-                  ...userInfo,
-                  password: e.target.value,
-                })
-              }
-              required
-              className="w-full px-3 py-2 mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
-            />
           </div>
           <button
             type="submit"
@@ -106,6 +118,6 @@ const RegisterPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default RegisterPage;

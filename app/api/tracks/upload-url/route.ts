@@ -12,7 +12,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-export async function POST(request: NextRequest) {
+export default async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -42,8 +42,7 @@ export async function POST(request: NextRequest) {
     const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
 
     return NextResponse.json({ uploadURL, key: fileName });
-  } catch (error) {
-    console.error('Error generating pre-signed URL', error);
+  } catch {
     return NextResponse.json(
       { error: 'Error generating pre-signed URL' },
       { status: 500 },

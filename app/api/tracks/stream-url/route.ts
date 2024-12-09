@@ -12,7 +12,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-export async function GET(request: NextRequest) {
+export default async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -34,8 +34,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
   }
 
-  console.log(audio.s3Key);
-
   const s3Params = {
     Bucket: process.env.S3_BUCKET_NAME!,
     Key: audio.s3Key,
@@ -46,8 +44,7 @@ export async function GET(request: NextRequest) {
     const streamURL = await s3.getSignedUrlPromise('getObject', s3Params);
 
     return NextResponse.json({ streamURL }, { status: 200 });
-  } catch (error) {
-    console.error('Error generating pre-signed URL', error);
+  } catch {
     return NextResponse.json(
       { error: 'Error generating pre-signed URL' },
       { status: 500 },

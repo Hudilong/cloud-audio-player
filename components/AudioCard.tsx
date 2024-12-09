@@ -1,18 +1,25 @@
 import React from 'react';
 import Image from 'next/image';
-import { formatTime } from '../utils/formatTime';
 import { Audio } from '@prisma/client';
+import { formatTime } from '../utils/formatTime';
 
 interface AudioCardProps {
   track: Audio;
   onSelect: (track: Audio) => void;
 }
 
-const AudioCard: React.FC<AudioCardProps> = ({ track, onSelect }) => {
+export default function AudioCard({ track, onSelect }: AudioCardProps) {
   return (
     <div
+      role="button"
+      tabIndex={0}
       className="audio-item bg-white dark:bg-gray-800 rounded-lg shadow-soft overflow-hidden w-full sm:w-40 md:w-44 lg:w-48 flex-shrink-0"
       onClick={() => onSelect(track)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onSelect(track);
+        }
+      }}
     >
       <div className="relative group cursor-pointer">
         <Image
@@ -45,6 +52,4 @@ const AudioCard: React.FC<AudioCardProps> = ({ track, onSelect }) => {
       </div>
     </div>
   );
-};
-
-export default AudioCard;
+}

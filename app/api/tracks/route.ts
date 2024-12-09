@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         artist,
         album,
         genre,
-        duration: parseInt(duration), // Duration in seconds
+        duration, // Duration in seconds
         s3Key,
         userId: user.id,
       },
@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
-  } catch (error) {
-    console.error('Error saving track:', error);
+  } catch {
     return NextResponse.json({ error: 'Error saving track' }, { status: 500 });
   }
 }
@@ -83,8 +82,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ tracks }, { status: 200 });
-  } catch (error) {
-    console.error('Error fetching tracks:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Error fetching tracks' },
       { status: 500 },

@@ -505,7 +505,7 @@ export default function Library(): JSX.Element {
   } = playerContext;
 
   useEffect(() => {
-    //Fetch the user's audio tracks
+    // Fetch the user's audio tracks
     // async function fetchTracks() {
     //     try {
     //         const res = await fetch("/api/tracks");

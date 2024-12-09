@@ -12,7 +12,10 @@ interface AudioCarouselProps {
   onSelect: (track: Audio) => void;
 }
 
-const AudioCarousel: React.FC<AudioCarouselProps> = ({ tracks, onSelect }) => {
+export default function AudioCarousel({
+  tracks,
+  onSelect,
+}: AudioCarouselProps) {
   return (
     <Swiper
       modules={[Navigation, Pagination]}
@@ -42,6 +45,4 @@ const AudioCarousel: React.FC<AudioCarouselProps> = ({ tracks, onSelect }) => {
       ))}
     </Swiper>
   );
-};
-
-export default AudioCarousel;
+}

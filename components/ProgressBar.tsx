@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { PlayerContext } from '@/context/PlayerContext';
 import { formatTime } from '../utils/formatTime';
 
-const ProgressBar = () => {
+function ProgressBar() {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
@@ -29,6 +29,6 @@ const ProgressBar = () => {
       </span>
     </div>
   );
-};
+}
 
 export default ProgressBar;

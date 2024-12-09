@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
-import UserMenu from './UserMenu';
 import { useSession } from 'next-auth/react';
+import UserMenu from './UserMenu';
 
-export const Navbar = () => {
+export default function Navbar() {
   const session = useSession();
   return (
     <nav className="flex justify-between items-center px-8 h-full">
@@ -36,4 +36,4 @@ export const Navbar = () => {
       <UserMenu />
     </nav>
   );
-};
+}

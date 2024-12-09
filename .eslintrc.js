@@ -16,6 +16,21 @@ module.exports = {
   ],
   plugins: ['@typescript-eslint', 'prettier'],
   rules: {
+    '@typescript-eslint/lines-between-class-members': 'off',
+    '@typescript-eslint/no-throw-literal': 'off',
+    'lines-between-class-members': [
+      'error',
+      'always',
+      { exceptAfterSingleLine: true },
+    ],
+    'no-throw-literal': 'error',
+    'jsx-a11y/media-has-caption': 'off',
+    'react/require-default-props': [
+      'off',
+      {
+        ignoreFunctionalComponents: true,
+      },
+    ],
     // Custom overrides if needed, for example:
     // 'react/jsx-props-no-spreading': 'off',
     // 'prettier/prettier': 'error',
