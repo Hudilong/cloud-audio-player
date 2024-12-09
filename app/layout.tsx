@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter, Poppins } from 'next/font/google';
 import { getServerSession } from 'next-auth';
 import SessionProvider from './context/SessionProvider';
-import { Navbar } from '../components/Navbar';
+import Navbar from '../components/Navbar';
 import { PlayerProvider } from './context/PlayerContext';
 import Player from '../components/Player';
 
