@@ -1,6 +1,6 @@
-import { Audio } from "@prisma/client";
+import { Audio } from '@prisma/client';
 
 export type TrackInfo = Omit<
-    Audio,
-    "s3Key" | "userId" | "id" | "createdAt" | "updatedAt"
+  Audio,
+  's3Key' | 'userId' | 'id' | 'createdAt' | 'updatedAt'
 >;
