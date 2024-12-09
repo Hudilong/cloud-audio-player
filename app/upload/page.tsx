@@ -121,7 +121,11 @@ function UploadPage() {
       resetForm();
       router.push('/library');
     } catch (err) {
-      setErrorDisplay(err.message || 'An unexpected error occurred');
+      if (err instanceof Error) {
+        setErrorDisplay(err.message);
+      } else {
+        setErrorDisplay('An unexpected error occurred');
+      }
     } finally {
       setUploading(false);
     }
