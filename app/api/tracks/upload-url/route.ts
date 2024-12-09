@@ -5,48 +5,48 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/api/auth/[...nextauth]/route";
 
 AWS.config.update({
-    region: process.env.AWS_REGION!,
-    accessKeyId: process.env.AWS_ACCESS_KEY!,
-    secretAccessKey: process.env.AWS_SECRET_KEY!,
+  region: process.env.S3_REGION!,
+  accessKeyId: process.env.S3_ACCESS_KEY!,
+  secretAccessKey: process.env.S3_SECRET_KEY!,
 });
 
 const s3 = new AWS.S3();
 
 export async function POST(request: NextRequest) {
-    const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
 
-    if (!session) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const { name, type } = await request.json();
+  const { name, type } = await request.json();
 
-    if (!name || !type) {
-        return NextResponse.json(
-            { error: "Missing required parameters" },
-            { status: 400 }
-        );
-    }
+  if (!name || !type) {
+    return NextResponse.json(
+      { error: "Missing required parameters" },
+      { status: 400 },
+    );
+  }
 
-    const fileExtension = name.substring(name.lastIndexOf("."));
-    const fileName = `${nanoid()}${fileExtension}`;
+  const fileExtension = name.substring(name.lastIndexOf("."));
+  const fileName = `${nanoid()}${fileExtension}`;
 
-    const s3Params = {
-        Bucket: process.env.AWS_BUCKET_NAME!,
-        Key: fileName,
-        Expires: 600,
-        ContentType: type,
-    };
+  const s3Params = {
+    Bucket: process.env.S3_BUCKET_NAME!,
+    Key: fileName,
+    Expires: 600,
+    ContentType: type,
+  };
 
-    try {
-        const uploadURL = await s3.getSignedUrlPromise("putObject", s3Params);
+  try {
+    const uploadURL = await s3.getSignedUrlPromise("putObject", s3Params);
 
-        return NextResponse.json({ uploadURL, key: fileName });
-    } catch (error) {
-        console.error("Error generating pre-signed URL", error);
-        return NextResponse.json(
-            { error: "Error generating pre-signed URL" },
-            { status: 500 }
-        );
-    }
+    return NextResponse.json({ uploadURL, key: fileName });
+  } catch (error) {
+    console.error("Error generating pre-signed URL", error);
+    return NextResponse.json(
+      { error: "Error generating pre-signed URL" },
+      { status: 500 },
+    );
+  }
 }
