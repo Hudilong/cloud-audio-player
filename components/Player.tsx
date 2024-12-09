@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import React, { useContext, useEffect, useState } from "react";
-import { PlayerContext } from "@/context/PlayerContext";
-import TrackInfoDisplay from "./TrackInfoDisplay";
-import PlayerControls from "./PlayerControls";
-import ExtraControls from "./ExtraControls";
-import ProgressBar from "./ProgressBar";
+import React, { useContext, useEffect, useState } from 'react';
+import { PlayerContext } from '@/context/PlayerContext';
+import TrackInfoDisplay from './TrackInfoDisplay';
+import PlayerControls from './PlayerControls';
+import ExtraControls from './ExtraControls';
+import ProgressBar from './ProgressBar';
 
 const Player = () => {
   const playerContext = useContext(PlayerContext);
   const [streamURL, setStreamURL] = useState<string | null>(null);
 
   if (!playerContext) {
-    throw new Error("Player must be used within a PlayerProvider");
+    throw new Error('Player must be used within a PlayerProvider');
   }
 
   const {
@@ -33,10 +33,10 @@ const Player = () => {
           const data = await res.json();
           setStreamURL(data.streamURL);
         } else {
-          console.error("Failed to fetch tracks");
+          console.error('Failed to fetch tracks');
         }
       } catch (error) {
-        console.error("Error fetching tracks:", error);
+        console.error('Error fetching tracks:', error);
       }
     }
     if (audio && audio.id) fetchStreamURL(audio.id);

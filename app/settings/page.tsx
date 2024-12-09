@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useRef } from "react";
+import React, { useRef } from 'react';
 
 export default function Settings() {
   const audioRef = useRef<HTMLAudioElement>(null);

@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { PrismaClient } from "@prisma/client";
-import { authOptions } from "../../../utils/authOptions";
+import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { PrismaClient } from '@prisma/client';
+import { authOptions } from '../../../utils/authOptions';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const userId = session.user.id;
@@ -26,7 +26,7 @@ export async function GET() {
 
     if (!playbackState) {
       return NextResponse.json(
-        { message: "No playback state found" },
+        { message: 'No playback state found' },
         { status: 200 },
       );
     }
@@ -39,9 +39,9 @@ export async function GET() {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error fetching playback state:", error);
+    console.error('Error fetching playback state:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }
@@ -51,16 +51,16 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const userId = session.user.id;
   const body = await request.json();
   const { audioId, position } = body;
 
-  if (!audioId || typeof position !== "number") {
+  if (!audioId || typeof position !== 'number') {
     return NextResponse.json(
-      { error: "audioId and position are required" },
+      { error: 'audioId and position are required' },
       { status: 400 },
     );
   }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     if (!audio || audio.userId !== userId) {
       return NextResponse.json(
-        { error: "Access denied to this audio" },
+        { error: 'Access denied to this audio' },
         { status: 403 },
       );
     }
@@ -86,13 +86,13 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: "Playback state updated" },
+      { message: 'Playback state updated' },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error updating playback state:", error);
+    console.error('Error updating playback state:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import AWS from "aws-sdk";
-import { getServerSession } from "next-auth";
-import prisma from "@/../utils/prisma";
-import { authOptions } from "../../../../utils/authOptions";
+import { NextRequest, NextResponse } from 'next/server';
+import AWS from 'aws-sdk';
+import { getServerSession } from 'next-auth';
+import prisma from '@/../utils/prisma';
+import { authOptions } from '../../../../utils/authOptions';
 
 AWS.config.update({
   region: process.env.S3_REGION!,
@@ -16,14 +16,14 @@ export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const url = new URL(request.url);
-  const id = url.searchParams.get("id");
+  const id = url.searchParams.get('id');
 
-  if (!id || typeof id !== "string") {
-    return NextResponse.json({ error: "Invalid audio ID" }, { status: 400 });
+  if (!id || typeof id !== 'string') {
+    return NextResponse.json({ error: 'Invalid audio ID' }, { status: 400 });
   }
 
   const audio = await prisma.audio.findUnique({
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!audio) {
-    return NextResponse.json({ error: "Audio not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
   }
 
   console.log(audio.s3Key);
@@ -43,13 +43,13 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    const streamURL = await s3.getSignedUrlPromise("getObject", s3Params);
+    const streamURL = await s3.getSignedUrlPromise('getObject', s3Params);
 
     return NextResponse.json({ streamURL }, { status: 200 });
   } catch (error) {
-    console.error("Error generating pre-signed URL", error);
+    console.error('Error generating pre-signed URL', error);
     return NextResponse.json(
-      { error: "Error generating pre-signed URL" },
+      { error: 'Error generating pre-signed URL' },
       { status: 500 },
     );
   }

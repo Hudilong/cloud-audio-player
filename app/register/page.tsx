@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/navigation";
-import { useState, FormEvent } from "react";
+import { useRouter } from 'next/navigation';
+import { useState, FormEvent } from 'react';
 
 const RegisterPage = () => {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState({
-    name: "",
-    email: "",
-    password: "",
+    name: '',
+    email: '',
+    password: '',
   });
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
       body: JSON.stringify(userInfo),
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     const data = await res.json();
     if (res.ok) {
-      router.push("/login");
+      router.push('/login');
     } else {
-      setErrorMsg(data.error || "An error occurred");
+      setErrorMsg(data.error || 'An error occurred');
     }
   };
 
@@ -95,7 +95,7 @@ const RegisterPage = () => {
           </button>
         </form>
         <p className="text-sm text-center text-textLight dark:text-textDark">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <a
             href="/login"
             className="text-accentLight dark:text-accentDark hover:underline"

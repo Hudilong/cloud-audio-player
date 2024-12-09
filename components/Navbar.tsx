@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import React from "react";
-import Image from "next/image";
-import UserMenu from "./UserMenu";
-import { useSession } from "next-auth/react";
+import Link from 'next/link';
+import React from 'react';
+import Image from 'next/image';
+import UserMenu from './UserMenu';
+import { useSession } from 'next-auth/react';
 
 export const Navbar = () => {
   const session = useSession();
@@ -22,7 +22,7 @@ export const Navbar = () => {
             />
           </Link>
         </li>
-        {session && session.status === "authenticated" && (
+        {session && session.status === 'authenticated' && (
           <>
             <li>
               <Link href="/library">Library</Link>

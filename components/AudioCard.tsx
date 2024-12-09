@@ -1,7 +1,7 @@
-import React from "react";
-import Image from "next/image";
-import { formatTime } from "../utils/formatTime";
-import { Audio } from "@prisma/client";
+import React from 'react';
+import Image from 'next/image';
+import { formatTime } from '../utils/formatTime';
+import { Audio } from '@prisma/client';
 
 interface AudioCardProps {
   track: Audio;
@@ -18,8 +18,8 @@ const AudioCard: React.FC<AudioCardProps> = ({ track, onSelect }) => {
         <Image
           width={176}
           height={176}
-          src={track.imageURL || "/default-thumbnail.png"}
-          alt={track.title || "thumbnail"}
+          src={track.imageURL || '/default-thumbnail.png'}
+          alt={track.title || 'thumbnail'}
           className="w-full h-44 object-cover"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">

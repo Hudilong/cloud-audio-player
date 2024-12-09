@@ -1,13 +1,13 @@
-import React, { useContext } from "react";
-import { PlayerContext } from "@/context/PlayerContext";
-import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import { FaVolumeUp, FaVolumeMute, FaRandom, FaRedo } from "react-icons/fa";
+import React, { useContext } from 'react';
+import { PlayerContext } from '@/context/PlayerContext';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { FaVolumeUp, FaVolumeMute, FaRandom, FaRedo } from 'react-icons/fa';
 
 const ExtraControls = () => {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
-    throw new Error("ExtraControls must be used within a PlayerProvider");
+    throw new Error('ExtraControls must be used within a PlayerProvider');
   }
 
   const {
@@ -25,22 +25,22 @@ const ExtraControls = () => {
       <button
         onClick={() => setIsShuffle(!isShuffle)}
         className={`text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white ${
-          isShuffle ? "text-accentLight dark:text-accentDark" : ""
+          isShuffle ? 'text-accentLight dark:text-accentDark' : ''
         }`}
         aria-label="Shuffle"
       >
-        <FaRandom color={isShuffle ? "#FF6EC7" : ""} />
+        <FaRandom color={isShuffle ? '#FF6EC7' : ''} />
       </button>
 
       {/* Repeat Button */}
       <button
         onClick={() => setIsRepeat(!isRepeat)}
         className={`text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white ${
-          isRepeat ? "text-accentLight dark:text-accentDark" : ""
+          isRepeat ? 'text-accentLight dark:text-accentDark' : ''
         }`}
         aria-label="Repeat"
       >
-        <FaRedo color={isRepeat ? "#FF6EC7" : ""} />
+        <FaRedo color={isRepeat ? '#FF6EC7' : ''} />
       </button>
 
       {/* Volume Control */}
@@ -61,8 +61,8 @@ const ExtraControls = () => {
             onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
             className="volume-slider"
             style={{
-              transform: "rotate(-90deg)",
-              transformOrigin: "center",
+              transform: 'rotate(-90deg)',
+              transformOrigin: 'center',
             }}
           />
         </PopoverPanel>

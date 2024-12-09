@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/../utils/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../utils/authOptions";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/../utils/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../utils/authOptions';
 
 export async function PUT(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { title, artist, album, duration, s3Key } = await request.json();
 
   if (!title || !artist || !duration || !s3Key) {
     return NextResponse.json(
-      { error: "Missing required fields" },
+      { error: 'Missing required fields' },
       { status: 400 },
     );
   }
@@ -26,15 +26,15 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const url = new URL(request.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get('id');
 
     if (!id) {
       return NextResponse.json(
-        { error: "Missing audioId parameter" },
+        { error: 'Missing audioId parameter' },
         { status: 400 },
       );
     }
@@ -54,14 +54,14 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Track updated successfully",
+        message: 'Track updated successfully',
         track,
       },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error saving track:", error);
-    return NextResponse.json({ error: "Error saving track" }, { status: 500 });
+    console.error('Error saving track:', error);
+    return NextResponse.json({ error: 'Error saving track' }, { status: 500 });
   }
 }
 
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const url = new URL(request.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get('id');
 
     if (!id) {
       return NextResponse.json(
-        { error: "Missing audioId parameter" },
+        { error: 'Missing audioId parameter' },
         { status: 400 },
       );
     }
@@ -101,9 +101,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ track }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching track:", error);
+    console.error('Error fetching track:', error);
     return NextResponse.json(
-      { error: "Error fetching track" },
+      { error: 'Error fetching track' },
       { status: 500 },
     );
   }

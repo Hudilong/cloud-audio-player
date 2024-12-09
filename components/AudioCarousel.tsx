@@ -1,11 +1,11 @@
-import React from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
-import { Audio } from "@prisma/client";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import AudioCard from "./AudioCard";
+import React from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+import { Audio } from '@prisma/client';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import AudioCard from './AudioCard';
 
 interface AudioCarouselProps {
   tracks: Audio[];

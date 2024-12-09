@@ -1,13 +1,13 @@
-import { ChangeEvent, FormEvent } from "react";
-import InputField from "./InputField";
-import { TrackInfo } from "@/types";
+import { ChangeEvent, FormEvent } from 'react';
+import InputField from './InputField';
+import { TrackInfo } from '@/types';
 
 const trackInfoKeys: (keyof TrackInfo)[] = [
-  "title",
-  "artist",
-  "album",
-  "genre",
-  "duration",
+  'title',
+  'artist',
+  'album',
+  'genre',
+  'duration',
 ];
 
 const FileUploadForm = ({
@@ -47,7 +47,7 @@ const FileUploadForm = ({
               name={field}
               value={metadata[field] as keyof TrackInfo}
               onChange={onInputChange}
-              readOnly={field === "duration"}
+              readOnly={field === 'duration'}
             />
           ))}
         </>
@@ -57,7 +57,7 @@ const FileUploadForm = ({
         className="w-full py-2 px-4 bg-accentLight dark:bg-accentDark text-white rounded-md hover:bg-opacity-90 focus:outline-none"
         disabled={!selectedFile || uploading}
       >
-        {uploading ? "Uploading..." : "Upload"}
+        {uploading ? 'Uploading...' : 'Upload'}
       </button>
     </form>
   );

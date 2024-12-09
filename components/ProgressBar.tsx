@@ -1,12 +1,12 @@
-import React, { useContext } from "react";
-import { PlayerContext } from "@/context/PlayerContext";
-import { formatTime } from "../utils/formatTime";
+import React, { useContext } from 'react';
+import { PlayerContext } from '@/context/PlayerContext';
+import { formatTime } from '../utils/formatTime';
 
 const ProgressBar = () => {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
-    throw new Error("ProgressBar must be used within a PlayerProvider");
+    throw new Error('ProgressBar must be used within a PlayerProvider');
   }
 
   const { audio, currentTime, handleSeek } = playerContext;

@@ -1,12 +1,12 @@
-import React, { useContext } from "react";
-import { PlayerContext } from "@/context/PlayerContext";
-import { FaPlay, FaPause, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import React, { useContext } from 'react';
+import { PlayerContext } from '@/context/PlayerContext';
+import { FaPlay, FaPause, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
 const PlayerControls = () => {
   const playerContext = useContext(PlayerContext);
 
   if (!playerContext) {
-    throw new Error("PlayerControls must be used within a PlayerProvider");
+    throw new Error('PlayerControls must be used within a PlayerProvider');
   }
 
   const { isPlaying, handleNext, handlePrevious, togglePlayPause } =

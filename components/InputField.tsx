@@ -1,6 +1,6 @@
-import { TrackInfo } from "@/types";
-import { ChangeEvent } from "react";
-import { formatTime } from "../utils/formatTime";
+import { TrackInfo } from '@/types';
+import { ChangeEvent } from 'react';
+import { formatTime } from '../utils/formatTime';
 
 const InputField = ({
   name,
@@ -20,7 +20,7 @@ const InputField = ({
     <input
       type="text"
       name={name}
-      value={name === "duration" ? formatTime(value) : value}
+      value={name === 'duration' ? formatTime(value) : value}
       onChange={onChange}
       readOnly={readOnly}
       className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"

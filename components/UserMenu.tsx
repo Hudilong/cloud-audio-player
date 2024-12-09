@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useSession, signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { useSession, signIn, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 const UserMenu = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="animate-pulse w-8 h-8 bg-gray-300 rounded-full"></div>
     );
@@ -29,7 +29,7 @@ const UserMenu = () => {
             />
           ) : (
             <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center text-white">
-              {session.user.name?.charAt(0).toUpperCase() || "U"}
+              {session.user.name?.charAt(0).toUpperCase() || 'U'}
             </div>
           )}
         </MenuButton>
@@ -37,9 +37,9 @@ const UserMenu = () => {
           <MenuItem>
             {({ focus }) => (
               <button
-                onClick={() => router.push("/settings")}
+                onClick={() => router.push('/settings')}
                 className={`${
-                  focus ? "bg-gray-100 dark:bg-gray-700" : ""
+                  focus ? 'bg-gray-100 dark:bg-gray-700' : ''
                 } block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
               >
                 Settings
@@ -49,9 +49,9 @@ const UserMenu = () => {
           <MenuItem>
             {({ focus }) => (
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className={`${
-                  focus ? "bg-gray-100 dark:bg-gray-700" : ""
+                  focus ? 'bg-gray-100 dark:bg-gray-700' : ''
                 } block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
               >
                 Sign Out

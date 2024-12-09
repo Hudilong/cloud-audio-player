@@ -1,9 +1,9 @@
-import { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import prisma from "@/../utils/prisma";
-import bcrypt from "bcrypt";
+import { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import prisma from '@/../utils/prisma';
+import bcrypt from 'bcrypt';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -13,18 +13,18 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
         email: {
-          label: "Email",
-          type: "email",
-          placeholder: "email@example.com",
+          label: 'Email',
+          type: 'email',
+          placeholder: 'email@example.com',
         },
-        password: { label: "Password", type: "password" },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+          throw new Error('Email and password are required');
         }
 
         const user = await prisma.user.findUnique({
@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
-          throw new Error("Invalid email or password");
+          throw new Error('Invalid email or password');
         }
 
         const isValid = await bcrypt.compare(
@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
           user.password,
         );
         if (!isValid) {
-          throw new Error("Invalid email or password");
+          throw new Error('Invalid email or password');
         }
 
         return {
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   callbacks: {
     async session({ session, token }) {
@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
