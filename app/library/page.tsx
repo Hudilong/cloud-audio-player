@@ -506,21 +506,20 @@ export default function Library(): JSX.Element {
 
   useEffect(() => {
     // Fetch the user's audio tracks
-    // async function fetchTracks() {
-    //     try {
-    //         const res = await fetch("/api/tracks");
-    //         if (res.ok) {
-    //             const data = await res.json();
-    //             setLibrary(data.tracks);
-    //         } else {
-    //             console.error("Failed to fetch tracks");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching tracks:", error);
-    //     }
-    // }
-    // fetchTracks();
-    setLibrary(dummyTracks);
+    async function fetchTracks() {
+      try {
+        const res = await fetch('/api/tracks');
+        if (res.ok) {
+          const data = await res.json();
+          setLibrary(data.tracks);
+        } else {
+          console.error('Failed to fetch tracks');
+        }
+      } catch (error) {
+        console.error('Error fetching tracks:', error);
+      }
+    }
+    fetchTracks();
   }, []);
 
   const handleTrackSelect = (selectedAudio: Audio) => {
