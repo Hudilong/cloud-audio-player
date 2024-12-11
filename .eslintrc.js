@@ -32,17 +32,18 @@ module.exports = {
       },
     ],
     'import/prefer-default-export': 'off',
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: ['**/test/**', '**/*.test.js', '**/*.spec.js'], // Include dev dependencies for tests
+        optionalDependencies: false, // Optional dependencies are allowed
+        peerDependencies: false, // Peer dependencies are allowed
+      },
+    ],
     // Custom overrides if needed, for example:
     // 'react/jsx-props-no-spreading': 'off',
     // 'prettier/prettier': 'error',
   },
-  'import/no-extraneous-dependencies': [
-    'error',
-    {
-      devDependencies: ['**/test/**', '**/*.test.js', '**/*.spec.js'], // Include dev dependencies for tests
-      optionalDependencies: false, // Optional dependencies are allowed
-      peerDependencies: false, // Peer dependencies are allowed
-    },
-  ],
+
   ignorePatterns: ['.next/', 'node_modules/', 'dist/'],
 };
