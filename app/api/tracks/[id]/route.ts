@@ -20,7 +20,6 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -72,7 +71,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -91,7 +89,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all tracks for the authenticated user
     const track = await prisma.track.findUnique({
       where: {
         id,
@@ -102,6 +99,59 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: 'Error fetching track' },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing audioId parameter' },
+        { status: 400 },
+      );
+    }
+
+    const track = await prisma.track.delete({
+      where: { id },
+    });
+
+    if (!track) {
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
+    }
+
+    if (track.userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return NextResponse.json(
+      {
+        message: 'Track deleted successfully',
+        track,
+      },
+      { status: 200 },
+    );
+  } catch {
+    return NextResponse.json(
+      { error: 'Error deleting track' },
       { status: 500 },
     );
   }
