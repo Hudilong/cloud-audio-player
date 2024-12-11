@@ -1,9 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { PrismaClient } from '@prisma/client';
 import { authOptions } from '../../../utils/authOptions';
-
-const prisma = new PrismaClient();
+import prisma from '../../../utils/prisma';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -19,7 +17,7 @@ export async function GET() {
     const playbackState = await prisma.playbackState.findUnique({
       where: { userId },
       include: {
-        audio: true,
+        track: true,
       },
     });
 
@@ -32,7 +30,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        audioId: playbackState.audioId,
+        trackId: playbackState.trackId,
         position: playbackState.position,
       },
       { status: 200 },
@@ -54,19 +52,19 @@ export async function POST(request: NextRequest) {
 
   const userId = session.user.id;
   const body = await request.json();
-  const { audioId, position } = body;
+  const { trackId, position } = body;
 
-  if (!audioId || typeof position !== 'number') {
+  if (!trackId || typeof position !== 'number') {
     return NextResponse.json(
-      { error: 'audioId and position are required' },
+      { error: 'trackId and position are required' },
       { status: 400 },
     );
   }
 
   try {
     // Verify the audio exists and is owned by the user
-    const audio = await prisma.audio.findUnique({
-      where: { id: audioId },
+    const audio = await prisma.track.findUnique({
+      where: { id: trackId },
     });
 
     if (!audio || audio.userId !== userId) {
@@ -79,8 +77,8 @@ export async function POST(request: NextRequest) {
     // Update or create the playback state
     await prisma.playbackState.upsert({
       where: { userId },
-      update: { audioId, position },
-      create: { userId, audioId, position },
+      update: { trackId, position },
+      create: { userId, trackId, position },
     });
 
     return NextResponse.json(

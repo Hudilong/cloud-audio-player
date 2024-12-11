@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Save the audio metadata and file URL to the database
-    const track = await prisma.audio.update({
+    const track = await prisma.track.update({
       data: {
         title,
         artist,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all tracks for the authenticated user
-    const track = await prisma.audio.findUnique({
+    const track = await prisma.track.findUnique({
       where: {
         id,
       },

@@ -8,23 +8,23 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { Audio } from '@prisma/client';
+import { Track } from '@prisma/client';
 
 interface PlayerContextProps {
   audioRef: React.RefObject<HTMLAudioElement>;
-  audio: Audio | null;
+  track: Track | null;
   currentTime: number;
   isPlaying: boolean;
-  playlist: Audio[];
+  playlist: Track[];
   currentTrackIndex: number;
   volume: number;
   isShuffle: boolean;
   isRepeat: boolean;
-  setAudio: (audio: Audio | null) => void;
+  setTrack: (audio: Track | null) => void;
   setCurrentTime: (position: number) => void;
   togglePlayPause: () => void;
   setIsPlaying: (isPlaying: boolean) => void;
-  setPlaylist: (tracks: Audio[]) => void;
+  setPlaylist: (tracks: Track[]) => void;
   setCurrentTrackIndex: (index: number) => void;
   handleVolumeChange: (volume: number) => void;
   toggleMute: () => void;
@@ -41,10 +41,10 @@ export const PlayerContext = createContext<PlayerContextProps | undefined>(
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [audio, setAudio] = useState<Audio | null>(null);
+  const [track, setTrack] = useState<Track | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playlist, setPlaylist] = useState<Audio[]>([]);
+  const [playlist, setPlaylist] = useState<Track[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(1);
@@ -128,7 +128,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!audioRef.current || !playlist[currentTrackIndex]) return;
-    setAudio(playlist[currentTrackIndex]);
+    setTrack(playlist[currentTrackIndex]);
 
     if (isPlaying) {
       audioRef.current.play().catch(() => {});
@@ -154,7 +154,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       audioRef,
-      audio,
+      track,
       currentTime,
       isPlaying,
       playlist,
@@ -162,7 +162,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       volume,
       isShuffle,
       isRepeat,
-      setAudio,
+      setTrack,
       setCurrentTime,
       setIsPlaying,
       setPlaylist,
@@ -177,7 +177,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       handleNext,
     }),
     [
-      audio,
+      track,
       currentTime,
       isPlaying,
       playlist,
