@@ -1,21 +1,21 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-import { Audio } from '@prisma/client';
+import { Track } from '@prisma/client';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import AudioCard from './AudioCard';
+import TrackCard from './TrackCard';
 
-interface AudioCarouselProps {
-  tracks: Audio[];
-  onSelect: (track: Audio) => void;
+interface TrackCarouselProps {
+  tracks: Track[];
+  onSelect: (track: Track) => void;
 }
 
-export default function AudioCarousel({
+export default function TrackCarousel({
   tracks,
   onSelect,
-}: AudioCarouselProps) {
+}: TrackCarouselProps) {
   return (
     <Swiper
       modules={[Navigation, Pagination]}
@@ -40,7 +40,7 @@ export default function AudioCarousel({
     >
       {tracks.map((track) => (
         <SwiperSlide key={track.id}>
-          <AudioCard track={track} onSelect={onSelect} />
+          <TrackCard track={track} onSelect={onSelect} />
         </SwiperSlide>
       ))}
     </Swiper>

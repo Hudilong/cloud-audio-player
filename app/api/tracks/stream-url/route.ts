@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid audio ID' }, { status: 400 });
   }
 
-  const audio = await prisma.audio.findUnique({
+  const audio = await prisma.track.findUnique({
     where: { id },
   });
 

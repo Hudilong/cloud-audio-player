@@ -23,7 +23,7 @@ model User {
   password      String? // Optional for manual credentials
   accounts      Account[] // Relation to Account model
   sessions      Session[] // Relation to Session model
-  audios        Audio[] // User's uploaded audios
+  tracks        Track[] // User's uploaded tracks
   playbackState PlaybackState? @relation("UserPlaybackState")
   Playlist      Playlist[]
 }
@@ -62,7 +62,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Audio {
+model Track {
   id             String          @id @default(cuid())
   title          String?
   artist         String?
@@ -82,7 +82,7 @@ model Audio {
 model PlaybackState {
   id                String   @id @default(cuid())
   userId            String   @unique
-  audioId           String?  @unique
+  trackId           String?  @unique
   position          Float    @default(0)
   isPlaying         Boolean  @default(false)
   volume            Float    @default(1.0)
@@ -92,7 +92,7 @@ model PlaybackState {
   tracks            Json     @default("[]")
   updatedAt         DateTime @updatedAt
   user              User     @relation("UserPlaybackState", fields: [userId], references: [id], onDelete: Cascade)
-  audio             Audio?   @relation("AudioPlaybackState", fields: [audioId], references: [id], onDelete: Cascade)
+  track             Track?   @relation("AudioPlaybackState", fields: [trackId], references: [id], onDelete: Cascade)
 }
 
 model Playlist {
@@ -108,11 +108,11 @@ model Playlist {
 model PlaylistTrack {
   id         String   @id @default(cuid())
   playlistId String
-  audioId    String
+  trackId    String
   position   Int
   addedAt    DateTime @default(now())
   playlist   Playlist @relation(fields: [playlistId], references: [id])
-  audio      Audio    @relation(fields: [audioId], references: [id])
+  track      Track    @relation(fields: [trackId], references: [id])
 
   @@unique([playlistId, position])
 }

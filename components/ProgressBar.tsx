@@ -9,7 +9,7 @@ function ProgressBar() {
     throw new Error('ProgressBar must be used within a PlayerProvider');
   }
 
-  const { audio, currentTime, handleSeek } = playerContext;
+  const { track, currentTime, handleSeek } = playerContext;
 
   return (
     <div className="flex items-center mt-2">
@@ -19,13 +19,13 @@ function ProgressBar() {
       <input
         type="range"
         min="0"
-        max={audio?.duration || 0}
+        max={track?.duration || 0}
         value={currentTime}
         onChange={(e) => handleSeek(parseFloat(e.target.value))}
         className="flex-1 mx-2"
       />
       <span className="text-xs text-gray-600 dark:text-gray-400">
-        {formatTime(audio?.duration || 0)}
+        {formatTime(track?.duration || 0)}
       </span>
     </div>
   );

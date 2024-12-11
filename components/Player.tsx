@@ -17,7 +17,7 @@ function Player() {
 
   const {
     audioRef,
-    audio,
+    track,
     isRepeat,
     setCurrentTime,
     setIsPlaying,
@@ -37,15 +37,15 @@ function Player() {
         setStreamURL('');
       }
     }
-    if (audio && audio.id) fetchStreamURL(audio.id);
-  }, [audio]);
+    if (track && track.id) fetchStreamURL(track.id);
+  }, [track]);
 
   useEffect(() => {
     audioRef.current?.play();
   }, [streamURL, audioRef]);
 
   return (
-    audio &&
+    track &&
     streamURL && (
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 shadow-md">
         <audio

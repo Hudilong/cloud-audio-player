@@ -1,20 +1,20 @@
 'use client';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { Audio } from '@prisma/client';
+import { Track } from '@prisma/client';
 import { PlayerContext } from '@/context/PlayerContext';
-import AudioCard from '../../components/AudioCard';
+import TrackCard from '../../components/TrackCard';
 
 export default function Library(): JSX.Element {
   const playerContext = useContext(PlayerContext);
-  const [library, setLibrary] = useState<Audio[]>([]);
+  const [library, setLibrary] = useState<Track[]>([]);
 
   if (!playerContext) {
     throw new Error('Library must be used within a PlayerProvider');
   }
 
   const {
-    setAudio,
+    setTrack,
     setCurrentTime,
     setIsPlaying,
     setCurrentTrackIndex,
@@ -39,11 +39,11 @@ export default function Library(): JSX.Element {
     fetchTracks();
   }, []);
 
-  const handleTrackSelect = (selectedAudio: Audio) => {
+  const handleTrackSelect = (selectedAudio: Track) => {
     setPlaylist(library);
     const index = library.findIndex((track) => track.id === selectedAudio.id);
     setCurrentTrackIndex(index);
-    setAudio(selectedAudio);
+    setTrack(selectedAudio);
     setCurrentTime(0);
     setIsPlaying(true);
   };
@@ -56,7 +56,7 @@ export default function Library(): JSX.Element {
     <div className="w-full flex-col px-48 py-32">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-16">
         {library.map((track) => (
-          <AudioCard
+          <TrackCard
             track={track}
             onSelect={handleTrackSelect}
             key={track.id}

@@ -1,14 +1,14 @@
 import React from 'react';
 import Image from 'next/image';
-import { Audio } from '@prisma/client';
+import { Track } from '@prisma/client';
 import { formatTime } from '../utils/formatTime';
 
-interface AudioCardProps {
-  track: Audio;
-  onSelect: (track: Audio) => void;
+interface TrackCardProps {
+  track: Track;
+  onSelect: (track: Track) => void;
 }
 
-export default function AudioCard({ track, onSelect }: AudioCardProps) {
+export default function TrackCard({ track, onSelect }: TrackCardProps) {
   return (
     <div
       role="button"
