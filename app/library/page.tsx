@@ -39,13 +39,38 @@ export default function Library(): JSX.Element {
     fetchTracks();
   }, []);
 
-  const handleTrackSelect = (selectedAudio: Track) => {
+  const handleTrackSelect = (selectedTrack: Track) => {
     setPlaylist(library);
-    const index = library.findIndex((track) => track.id === selectedAudio.id);
+    const index = library.findIndex((track) => track.id === selectedTrack.id);
     setCurrentTrackIndex(index);
-    setTrack(selectedAudio);
+    setTrack(selectedTrack);
     setCurrentTime(0);
     setIsPlaying(true);
+  };
+
+  const handleDeleteItemClicked = async (track: Track) => {
+    try {
+      const res = await fetch(`/api/tracks/delete-url?id=${track.id}`);
+      const { deleteURL, error } = await res.json();
+
+      if (error) throw new Error(error);
+
+      const deleteResponse = await fetch(deleteURL, {
+        method: 'DELETE',
+      });
+
+      if (!deleteResponse.ok) throw new Error('Failed to delete file');
+
+      await fetch(`/api/tracks/${track.id}`, {
+        method: 'DELETE',
+      });
+
+      setLibrary((prevLibrary) =>
+        prevLibrary.filter((item) => item.id !== track.id),
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (!library || library.length === 0) {
@@ -54,11 +79,12 @@ export default function Library(): JSX.Element {
 
   return (
     <div className="w-full flex-col px-48 py-32">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-16">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-16">
         {library.map((track) => (
           <TrackCard
             track={track}
             onSelect={handleTrackSelect}
+            onDelete={handleDeleteItemClicked}
             key={track.id}
           />
         ))}
