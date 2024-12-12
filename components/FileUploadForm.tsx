@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent } from 'react';
-import { TrackInfo } from '@/types';
+import { TrackInfo } from '../types';
 import InputField from './InputField';
 
 interface FileUploadFormProps {
