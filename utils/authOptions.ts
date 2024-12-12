@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcrypt';
 import prisma from './prisma';
-import { SafeUser } from '@/types';
+import { SafeUser } from '../types';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -62,7 +62,6 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!existingAccount) {
-          console.log('new account');
           // Check if there is a user with the same email
           if (!user.email) {
             throw new Error('Email is required for sign-in.');
@@ -73,7 +72,6 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (existingUser) {
-            console.log('USER EXISTS!', user.image, existingUser.image);
             // Update the user's image if provided by the new account
             if (user.image && existingUser.image !== user.image) {
               await prisma.user.update({
@@ -94,7 +92,6 @@ export const authOptions: NextAuthOptions = {
               },
             });
           } else {
-            console.log('USER DOESNT EXISTS!');
             // No existing user, create a new one
             await prisma.user.create({
               data: {

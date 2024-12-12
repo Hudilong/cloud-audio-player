@@ -10,11 +10,13 @@ import TrackCard from './TrackCard';
 interface TrackCarouselProps {
   tracks: Track[];
   onSelect: (track: Track) => void;
+  onDelete: (track: Track) => void;
 }
 
 export default function TrackCarousel({
   tracks,
   onSelect,
+  onDelete,
 }: TrackCarouselProps) {
   return (
     <Swiper
@@ -40,7 +42,7 @@ export default function TrackCarousel({
     >
       {tracks.map((track) => (
         <SwiperSlide key={track.id}>
-          <TrackCard track={track} onSelect={onSelect} />
+          <TrackCard track={track} onSelect={onSelect} onDelete={onDelete} />
         </SwiperSlide>
       ))}
     </Swiper>

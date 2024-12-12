@@ -1,27 +1,42 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import { Track } from '@prisma/client';
 import { formatTime } from '../utils/formatTime';
+import ContextualMenu from './ContextualMenu';
+import { Item } from '../types/item';
 
 interface TrackCardProps {
   track: Track;
   onSelect: (track: Track) => void;
+  onDelete: (track: Track) => void;
 }
 
-export default function TrackCard({ track, onSelect }: TrackCardProps) {
+export default function TrackCard({
+  track,
+  onSelect,
+  onDelete,
+}: TrackCardProps) {
+  const menuItems: Item[] = [
+    {
+      label: 'Delete Track',
+      onClick: () => onDelete(track),
+    },
+  ];
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className="audio-item bg-white dark:bg-gray-800 rounded-lg shadow-soft overflow-hidden w-full sm:w-40 md:w-44 lg:w-48 flex-shrink-0"
-      onClick={() => onSelect(track)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onSelect(track);
-        }
-      }}
-    >
-      <div className="relative group cursor-pointer">
+    <div className="audio-item bg-white dark:bg-gray-800 rounded-lg shadow-soft  w-full sm:w-40 md:w-44 lg:w-48 flex-shrink-0">
+      <div
+        className="relative group cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={() => onSelect(track)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            onSelect(track);
+          }
+        }}
+      >
         <Image
           width={176}
           height={176}
@@ -41,14 +56,18 @@ export default function TrackCard({ track, onSelect }: TrackCardProps) {
           </svg>
         </div>
       </div>
-      <div className="p-2">
-        <h3 className="text-sm font-semibold truncate">{track.title}</h3>
-        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-          {track.artist}
-        </p>
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          {formatTime(track.duration)}
-        </p>
+      <div className="px-4 py-2 flex flex-row justify-between items-center">
+        <div className="overflow-hidden">
+          <h3 className="text-sm font-semibold truncate">{track.title}</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+            {track.artist}
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            {formatTime(track.duration)}
+          </p>
+        </div>
+
+        <ContextualMenu items={menuItems} />
       </div>
     </div>
   );

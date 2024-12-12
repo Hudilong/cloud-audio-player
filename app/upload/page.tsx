@@ -4,7 +4,7 @@ import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { parseBlob } from 'music-metadata-browser';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { TrackInfo } from '@/types';
+import { TrackInfo } from '../../types';
 import FileUploadForm from '../../components/FileUploadForm';
 
 function UploadPage() {
