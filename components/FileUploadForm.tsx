@@ -1,6 +1,15 @@
 import { ChangeEvent, FormEvent } from 'react';
-import { TrackInfo } from '@/types';
+import { TrackInfo } from '../types';
 import InputField from './InputField';
+
+interface FileUploadFormProps {
+  selectedFile: File | null;
+  metadata: TrackInfo;
+  uploading: boolean;
+  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (e: FormEvent) => void;
+}
 
 const trackInfoKeys: (keyof TrackInfo)[] = [
   'title',
@@ -17,14 +26,7 @@ function FileUploadForm({
   onFileChange,
   onInputChange,
   onSubmit,
-}: {
-  selectedFile: File | null;
-  metadata: TrackInfo;
-  uploading: boolean;
-  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (e: FormEvent) => void;
-}) {
+}: FileUploadFormProps) {
   return (
     <form onSubmit={onSubmit}>
       <div className="mb-4">
@@ -47,9 +49,9 @@ function FileUploadForm({
         <>
           {trackInfoKeys.map((field) => (
             <InputField
-              key={field}
-              name={field}
-              value={metadata[field] as keyof TrackInfo}
+              key={field as string}
+              name={field as string}
+              value={metadata[field] as string}
               onChange={onInputChange}
               readOnly={field === 'duration'}
             />

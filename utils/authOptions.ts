@@ -2,8 +2,9 @@ import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import prisma from '@/../utils/prisma';
-import bcrypt from 'bcrypt';
+import { compare } from 'bcrypt';
+import prisma from './prisma';
+import { SafeUser } from '../types';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -35,20 +36,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials');
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password,
-        );
+        const isValid = await compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error('Invalid credentials');
         }
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-        };
+        return user as SafeUser;
       },
     }),
   ],
@@ -56,21 +49,95 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
+    async signIn({ user, account, profile, credentials }) {
+      if (account && account.provider) {
+        // Check if there is an existing account for this provider
+        const existingAccount = await prisma.account.findUnique({
+          where: {
+            provider_providerAccountId: {
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+            },
+          },
+        });
+
+        if (!existingAccount) {
+          // Check if there is a user with the same email
+          if (!user.email) {
+            throw new Error('Email is required for sign-in.');
+          }
+
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          });
+
+          if (existingUser) {
+            // Update the user's image if provided by the new account
+            if (user.image && existingUser.image !== user.image) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                  image: user.image, // Update the image if it's different
+                },
+              });
+            }
+
+            // Link the new provider account to the existing user
+            await prisma.account.create({
+              data: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                userId: existingUser.id,
+                type: account.type,
+              },
+            });
+          } else {
+            // No existing user, create a new one
+            await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name,
+                image: user.image,
+                accounts: {
+                  create: {
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    type: account.type,
+                  },
+                },
+              },
+            });
+          }
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
+      // Attach user ID to the JWT token
       if (user) {
-        token.id = user.id; // Add the user ID to the token
+        return {
+          ...token,
+          id: user.id,
+        };
       }
       return token;
     },
     async session({ session, token }) {
+      // Attach user ID to the session object
       if (token && session.user) {
-        session.user.id = token.id as string; // Add the user ID to the session
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id,
+          },
+        };
       }
       return session;
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/login', // Custom sign-in page
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

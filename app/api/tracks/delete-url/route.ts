@@ -37,13 +37,13 @@ export async function GET(request: NextRequest) {
   const s3Params = {
     Bucket: process.env.S3_BUCKET_NAME!,
     Key: audio.s3Key,
-    Expires: 600,
+    Expires: 60,
   };
 
   try {
-    const streamURL = await s3.getSignedUrlPromise('getObject', s3Params);
+    const deleteURL = await s3.getSignedUrlPromise('deleteObject', s3Params);
 
-    return NextResponse.json({ streamURL }, { status: 200 });
+    return NextResponse.json({ deleteURL }, { status: 200 });
   } catch {
     return NextResponse.json(
       { error: 'Error generating pre-signed URL' },

@@ -3,7 +3,10 @@ import prisma from '@/../utils/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../utils/authOptions';
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -20,7 +23,6 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -29,8 +31,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -40,7 +41,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Save the audio metadata and file URL to the database
-    const track = await prisma.audio.update({
+    const track = await prisma.track.update({
       data: {
         title,
         artist,
@@ -64,7 +65,10 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -72,7 +76,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -81,8 +84,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -91,8 +93,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all tracks for the authenticated user
-    const track = await prisma.audio.findUnique({
+    const track = await prisma.track.findUnique({
       where: {
         id,
       },
@@ -102,6 +103,61 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: 'Error fetching track' },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing audioId parameter' },
+        { status: 400 },
+      );
+    }
+
+    const track = await prisma.track.delete({
+      where: { id },
+    });
+
+    if (!track) {
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
+    }
+
+    if (track.userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return NextResponse.json(
+      {
+        message: 'Track deleted successfully',
+        track,
+      },
+      { status: 200 },
+    );
+  } catch {
+    return NextResponse.json(
+      { error: 'Error deleting track' },
       { status: 500 },
     );
   }
