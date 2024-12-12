@@ -3,7 +3,10 @@ import prisma from '@/../utils/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../utils/authOptions';
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -28,8 +31,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -63,7 +65,10 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -79,8 +84,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -104,7 +108,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -120,8 +127,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
