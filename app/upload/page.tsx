@@ -90,47 +90,64 @@ function UploadPage() {
 
     setUploading(true);
     try {
-      const response = await fetch('/api/tracks/upload-url', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: selectedFile.name,
-          type: selectedFile.type,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const { uploadURL, key, error } = await response.json();
-      if (error) throw new Error(error);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64Buffer = reader.result?.toString().split(',')[1];
 
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: selectedFile,
-        headers: { 'Content-Type': selectedFile.type },
-      });
-      if (!uploadResponse.ok) throw new Error('Failed to upload file');
+          const response = await fetch('/api/tracks/upload-url', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: selectedFile.name,
+              type: selectedFile.type,
+              fileBuffer: base64Buffer,
+            }),
+            headers: { 'Content-Type': 'application/json' },
+          });
 
-      const saveResponse = await fetch('/api/tracks', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...trackInfo,
-          s3Key: key,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!saveResponse.ok) throw new Error('Failed to save metadata');
+          const { uploadURL, key, error } = await response.json();
+          if (error) throw new Error(error);
 
-      resetForm();
-      router.push('/library');
+          const uploadResponse = await fetch(uploadURL, {
+            method: 'PUT',
+            body: selectedFile,
+            headers: { 'Content-Type': selectedFile.type },
+          });
+          if (!uploadResponse.ok) throw new Error('Failed to upload file');
+
+          const saveResponse = await fetch('/api/tracks', {
+            method: 'POST',
+            body: JSON.stringify({
+              ...trackInfo,
+              s3Key: key,
+            }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (!saveResponse.ok) throw new Error('Failed to save metadata');
+
+          resetForm();
+          router.push('/library');
+        } catch (err) {
+          if (err instanceof Error) {
+            setErrorDisplay(err.message);
+          } else {
+            setErrorDisplay('An unexpected error occurred');
+          }
+        } finally {
+          setUploading(false); // Only reset after completion
+        }
+      };
+
+      reader.readAsDataURL(selectedFile);
     } catch (err) {
       if (err instanceof Error) {
         setErrorDisplay(err.message);
       } else {
         setErrorDisplay('An unexpected error occurred');
       }
-    } finally {
-      setUploading(false);
+      setUploading(false); // Handle errors outside of onloadend
     }
   };
-
   return (
     <div className="h-full bg-backgroundLight dark:bg-backgroundDark flex items-center justify-center">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft">

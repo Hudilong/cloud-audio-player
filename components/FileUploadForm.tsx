@@ -38,7 +38,7 @@ function FileUploadForm({
           <input
             id="file"
             type="file"
-            accept="audio/*"
+            accept="audio/mpeg, audio/wav, audio/ogg"
             onChange={onFileChange}
             className="w-full text-textLight dark:text-textDark"
             required

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, FormEvent } from 'react';
+import { validateEmail } from '../../utils/validateEmail';
 
 function RegisterPage() {
   const router = useRouter();
@@ -13,6 +14,11 @@ function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
+    if (!validateEmail(userInfo.email)) {
+      setErrorMsg('Please enter a valid email address');
+      return;
+    }
+
     e.preventDefault();
     const res = await fetch('/api/auth/register', {
       method: 'POST',
