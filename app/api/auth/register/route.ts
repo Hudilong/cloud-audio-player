@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/../utils/prisma';
 import bcrypt from 'bcrypt';
+import { validateEmail } from '../../../../utils/validateEmail';
 
 export async function POST(request: Request) {
   const { email, password, name } = await request.json();
@@ -12,9 +13,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+  if (!email || !validateEmail(email)) {
+    return NextResponse.json(
+      { error: 'Invalid email address' },
+      { status: 400 },
+    );
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
