@@ -7,7 +7,7 @@ import PlayerControls from './PlayerControls';
 import ExtraControls from './ExtraControls';
 import ProgressBar from './ProgressBar';
 
-function Player() {
+export default function Player() {
   const playerContext = useContext(PlayerContext);
   const [streamURL, setStreamURL] = useState<string | null>(null);
 
@@ -25,7 +25,6 @@ function Player() {
   } = playerContext;
 
   useEffect(() => {
-    // Fetch the user's audio tracks
     async function fetchStreamURL(id: string) {
       try {
         const res = await fetch(`/api/tracks/stream-url?id=${id}`);
@@ -47,7 +46,8 @@ function Player() {
   return (
     track &&
     streamURL && (
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 shadow-md">
+      <div className="fixed bottom-0 left-0 right-0 bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-md h-16 sm:h-20 px-4 sm:px-6 flex flex-col justify-around">
+        {/* Audio Element */}
         <audio
           ref={audioRef}
           src={streamURL}
@@ -66,15 +66,19 @@ function Player() {
           }}
           autoPlay
         />
-        <div className="flex items-center justify-between">
+
+        {/* Player Controls */}
+        <div className="flex items-center justify-between text-xs sm:text-base mb-1 sm:mb-0">
           <PlayerControls />
           <TrackInfoDisplay />
           <ExtraControls />
         </div>
-        <ProgressBar />
+
+        {/* Compact Progress Bar */}
+        <div className="flex items-center">
+          <ProgressBar />
+        </div>
       </div>
     )
   );
 }
-
-export default Player;

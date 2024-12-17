@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async signIn({ user, account, profile, credentials }) {
+    async signIn({ user, account }) {
       if (account && account.provider) {
         // Check if there is an existing account for this provider
         const existingAccount = await prisma.account.findUnique({
@@ -134,6 +134,14 @@ export const authOptions: NextAuthOptions = {
         };
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // If redirect is sign-out (default url is `/`), redirect to `/`
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        return `${baseUrl}/`;
+      }
+      // For sign-in, redirect to `/library`
+      return `${baseUrl}/library`;
     },
   },
   pages: {

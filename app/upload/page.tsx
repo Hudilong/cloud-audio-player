@@ -149,13 +149,15 @@ function UploadPage() {
     }
   };
   return (
-    <div className="h-full bg-backgroundLight dark:bg-backgroundDark flex items-center justify-center">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft">
-        <h1 className="text-2xl font-bold text-center text-textLight dark:text-textDark mb-4">
+    <div className="h-full bg-backgroundLight dark:bg-backgroundDark flex items-center justify-center px-4 sm:px-6 py-6 pt-[5.5rem] sm:pt-20">
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-soft">
+        <h1 className="text-xl sm:text-2xl font-bold text-center text-textLight dark:text-textDark mb-4">
           Upload Track
         </h1>
         {errorDisplay && (
-          <p className="text-red-500 text-center mb-4">{errorDisplay}</p>
+          <p className="text-red-500 text-center mb-4 text-sm sm:text-base">
+            {errorDisplay}
+          </p>
         )}
         <FileUploadForm
           selectedFile={selectedFile}
