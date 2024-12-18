@@ -14,7 +14,7 @@ export default function Library(): JSX.Element {
   const router = useRouter();
   const playerContext = useContext(PlayerContext);
   const [library, setLibrary] = useState<Track[]>([]);
-  const [view, setView] = useState<'card' | 'list'>('card');
+  const [view, setView] = useState<'card' | 'list'>('list');
   const [errorDisplay, setErrordisplay] = useState<string | null>(null); // Error state
 
   useEffect(() => {
@@ -112,21 +112,21 @@ export default function Library(): JSX.Element {
       <div className="flex justify-end gap-4 mb-6">
         <button
           type="button"
-          onClick={() => setView('card')}
-          className={`p-2 rounded ${
-            view === 'card' ? 'bg-gray-200 dark:bg-gray-700' : ''
-          }`}
-        >
-          <FaThLarge />
-        </button>
-        <button
-          type="button"
           onClick={() => setView('list')}
           className={`p-2 rounded ${
             view === 'list' ? 'bg-gray-200 dark:bg-gray-700' : ''
           }`}
         >
           <FaList />
+        </button>
+        <button
+          type="button"
+          onClick={() => setView('card')}
+          className={`p-2 rounded ${
+            view === 'card' ? 'bg-gray-200 dark:bg-gray-700' : ''
+          }`}
+        >
+          <FaThLarge />
         </button>
       </div>
 
