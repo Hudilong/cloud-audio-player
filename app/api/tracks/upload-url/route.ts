@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import AWS from 'aws-sdk';
 import { nanoid } from 'nanoid';
 import { getServerSession } from 'next-auth';
+import { fileTypeFromBuffer } from 'file-type';
 import { authOptions } from '../../../../utils/authOptions';
 
 AWS.config.update({
@@ -19,7 +20,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { name, type } = await request.json();
+  const { name, type, fileBuffer } = await request.json();
+
+  // Validate file content
+  const fileTypeInfo = await fileTypeFromBuffer(
+    Buffer.from(fileBuffer, 'base64'),
+  );
+  const allowedMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
+
+  if (!fileTypeInfo || !allowedMimeTypes.includes(fileTypeInfo.mime)) {
+    return NextResponse.json({ error: 'Invalid file type.' }, { status: 400 });
+  }
 
   if (!name || !type) {
     return NextResponse.json(

@@ -53,7 +53,9 @@ function ExtraControls() {
         >
           {volume > 0 ? <FaVolumeUp /> : <FaVolumeMute />}
         </PopoverButton>
-        <PopoverPanel className="absolute right-0 bottom-10 mb-2 w-8 bg-white dark:bg-gray-800 p-2 rounded shadow-lg flex items-center">
+
+        {/* Volume Slider */}
+        <PopoverPanel className="absolute right-0 bottom-10 w-20 bg-white dark:bg-gray-800 p-2 rounded shadow-lg flex justify-center">
           <input
             type="range"
             min="0"
@@ -61,11 +63,7 @@ function ExtraControls() {
             step="0.01"
             value={volume}
             onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-            className="volume-slider"
-            style={{
-              transform: 'rotate(-90deg)',
-              transformOrigin: 'center',
-            }}
+            className="w-full accent-accentDark"
           />
         </PopoverPanel>
       </Popover>

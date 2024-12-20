@@ -7,6 +7,7 @@ import SessionProvider from './context/SessionProvider';
 import Navbar from '../components/Navbar';
 import { PlayerProvider } from './context/PlayerContext';
 import Player from '../components/Player';
+import MainContent from '../components/MainContent';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -49,14 +50,19 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <SessionProvider session={session}>
-          <header className="fixed top-0 w-full bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-16 z-10">
+          {/* Fixed Header */}
+          <header className="fixed top-0 w-full bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-12 sm:h-16 z-10 flex items-center">
             <Navbar />
           </header>
+
           <PlayerProvider>
-            <main className="flex-grow py-16  bg-backgroundLight dark:bg-backgroundDark text-textLight dark:text-textDark">
-              {children}
+            {/* Main Content */}
+            <main className="flex-grow pt-12 sm:pt-16 pb-20 sm:pb-24 bg-backgroundLight dark:bg-backgroundDark text-textLight dark:text-textDark">
+              <MainContent>{children}</MainContent>
             </main>
-            <footer className="w-full fixed bottom-0 bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-24">
+
+            {/* Fixed Footer */}
+            <footer className="w-full fixed bottom-0 bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-16 sm:h-20 z-10">
               <Player />
             </footer>
           </PlayerProvider>
