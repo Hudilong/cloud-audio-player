@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Track } from '@prisma/client';
-import { SessionStatus } from 'next-auth';
-import { PlaylistWithTracks } from '../../types/playlist';
+import type { PlaylistWithTracks } from '../../types/playlist';
+
+type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 const defaultPlaylistFilter = { id: null, name: 'Library' };
 

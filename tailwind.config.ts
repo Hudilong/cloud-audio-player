@@ -34,7 +34,11 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-space-grotesk)', 'var(--font-inter)', 'sans-serif'],
-        display: ['var(--font-poppins)', 'var(--font-space-grotesk)', 'sans-serif'],
+        display: [
+          'var(--font-poppins)',
+          'var(--font-space-grotesk)',
+          'sans-serif',
+        ],
       },
       fontSize: {
         xs: ['0.75rem', '1rem'], // Extra small
