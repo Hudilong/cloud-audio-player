@@ -27,23 +27,37 @@ function FileUploadForm({
   onInputChange,
   onSubmit,
 }: FileUploadFormProps) {
+  const hasFile = Boolean(selectedFile);
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {/* File Input */}
-      <div>
+      <div className="space-y-2">
+        <p className="text-sm sm:text-base text-textLight dark:text-textDark font-medium">
+          Select audio file
+        </p>
         <label
           htmlFor="file"
-          className="block text-sm sm:text-base text-textLight dark:text-textDark font-medium mb-2"
+          className="group relative block w-full rounded-2xl border border-dashed border-white/70 dark:border-white/10 bg-white/70 dark:bg-backgroundDark/60 px-4 py-6 text-center cursor-pointer hover:border-accentLight/70 hover:shadow-glass transition-all"
         >
-          Select Audio File
           <input
             id="file"
             type="file"
             accept="audio/mpeg, audio/wav, audio/ogg"
             onChange={onFileChange}
-            className="w-full p-2 sm:p-3 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+            className="hidden"
             required
           />
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pastelPurple to-accentLight text-white flex items-center justify-center shadow-soft">
+              <span className="text-lg font-semibold">+</span>
+            </div>
+            <p className="text-sm text-ink dark:text-textDark font-semibold">
+              {hasFile ? selectedFile?.name : 'Drop or browse your track'}
+            </p>
+            <p className="text-xs text-muted">
+              MP3, WAV, or OGG • 100MB max • keep your cover art
+            </p>
+          </div>
         </label>
       </div>
 
@@ -62,7 +76,7 @@ function FileUploadForm({
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full py-2 sm:py-3 px-4 bg-accentLight dark:bg-accentDark text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark transition-all duration-300"
+        className="w-full py-3 px-4 bg-gradient-to-r from-pastelPurple to-accentLight text-white text-sm sm:text-base font-semibold rounded-full shadow-soft hover:shadow-glass focus:outline-none focus:ring-2 focus:ring-accentLight/40 transition-all duration-300"
         disabled={!selectedFile || uploading}
       >
         {uploading ? 'Uploading...' : 'Upload'}

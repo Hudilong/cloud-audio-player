@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { PlayerContext } from '@/context/PlayerContext';
-import { FaPlay, FaPause, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import { FiPause, FiPlay, FiSkipBack, FiSkipForward } from 'react-icons/fi';
 
 function PlayerControls() {
   const playerContext = useContext(PlayerContext);
@@ -13,32 +13,36 @@ function PlayerControls() {
     playerContext;
 
   return (
-    <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
-      {/* Previous Button */}
+    <div className="flex items-center gap-3 sm:gap-4 text-ink/70 dark:text-textDark">
       <button
         type="button"
         onClick={handlePrevious}
-        className="hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
+        className="p-2 rounded-full hover:bg-surfaceMuted/80 dark:hover:bg-backgroundDark/80 hover:text-textLight transition-colors"
+        aria-label="Previous"
       >
-        <FaArrowLeft />
+        <FiSkipBack className="h-5 w-5" />
       </button>
 
-      {/* Play/Pause Button */}
       <button
         type="button"
         onClick={togglePlayPause}
-        className="hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
+        className="p-3 rounded-full bg-gradient-to-r from-pastelPurple to-accentLight text-white shadow-soft hover:shadow-glass transition-all"
+        aria-label={isPlaying ? 'Pause' : 'Play'}
       >
-        {isPlaying ? <FaPause /> : <FaPlay />}
+        {isPlaying ? (
+          <FiPause className="h-5 w-5" />
+        ) : (
+          <FiPlay className="h-5 w-5" />
+        )}
       </button>
 
-      {/* Next Button */}
       <button
         type="button"
         onClick={handleNext}
-        className="hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
+        className="p-2 rounded-full hover:bg-surfaceMuted/80 dark:hover:bg-backgroundDark/80 hover:text-textLight transition-colors"
+        aria-label="Next"
       >
-        <FaArrowRight />
+        <FiSkipForward className="h-5 w-5" />
       </button>
     </div>
   );

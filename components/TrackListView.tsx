@@ -22,7 +22,7 @@ export default function TrackListView({
   onAddToPlaylist,
 }: TrackListViewProps) {
   return (
-    <ul className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <ul className="w-full space-y-3">
       {tracks.map((track) => (
         <TrackItem
           key={track.id}

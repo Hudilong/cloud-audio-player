@@ -14,15 +14,17 @@ export default function InputField({
   onChange,
   readOnly = false,
 }: InputProps) {
+  const fieldId = `field-${name}`;
+
   return (
     <div className="mb-4">
       <label
-        htmlFor="name"
+        htmlFor={fieldId}
         className="block text-textLight dark:text-textDark font-medium mb-2 capitalize"
       >
         {name}
         <input
-          id="name"
+          id={fieldId}
           type="text"
           name={name}
           value={
@@ -30,7 +32,7 @@ export default function InputField({
           }
           onChange={onChange}
           readOnly={readOnly}
-          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accentLight dark:focus:ring-accentDark"
+          className="w-full px-3 py-3 bg-white/80 dark:bg-backgroundDark/70 border border-white/70 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-accentLight/40"
           required={!readOnly}
         />
       </label>

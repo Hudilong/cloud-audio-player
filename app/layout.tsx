@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import { Inter, Poppins } from 'next/font/google';
+import { Inter, Poppins, Space_Grotesk } from 'next/font/google';
 import { getServerSession } from 'next-auth';
 import SessionProvider from './context/SessionProvider';
 import Navbar from '../components/Navbar';
@@ -19,6 +19,13 @@ const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
   variable: '--font-poppins',
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
   display: 'swap',
 });
 
@@ -45,24 +52,27 @@ export default async function RootLayout({
 }>) {
   const session = await getServerSession();
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable}`}
+    >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col text-textLight dark:text-textDark`}
       >
         <SessionProvider session={session}>
           {/* Fixed Header */}
-          <header className="fixed top-0 w-full bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-12 sm:h-16 z-10 flex items-center">
+          <header className="fixed top-0 w-full bg-white/70 dark:bg-backgroundDark/90 backdrop-blur-lg border-b border-white/60 dark:border-white/10 text-textLight dark:text-textDark shadow-glass h-14 sm:h-16 z-20 flex items-center">
             <Navbar />
           </header>
 
           <PlayerProvider>
             {/* Main Content */}
-            <main className="flex-grow pt-12 sm:pt-16 pb-20 sm:pb-24 bg-backgroundLight dark:bg-backgroundDark text-textLight dark:text-textDark">
+            <main className="flex-grow pt-14 sm:pt-16 pb-24 sm:pb-28">
               <MainContent>{children}</MainContent>
             </main>
 
             {/* Fixed Footer */}
-            <footer className="w-full fixed bottom-0 bg-accentLight dark:bg-accentDark text-textLight dark:text-textDark shadow-soft dark:shadow-heavy h-16 sm:h-20 z-10">
+            <footer className="w-full fixed bottom-0 text-textLight dark:text-textDark h-20 sm:h-24 z-20">
               <Player />
             </footer>
           </PlayerProvider>
