@@ -24,7 +24,7 @@ function ExtraControls() {
       <button
         type="button"
         onClick={() => setIsShuffle(!isShuffle)}
-        className={`p-2 rounded-full hover:bg-surfaceMuted/60 dark:hover:bg-backgroundDark/80 transition-colors ${
+        className={`p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors ${
           isShuffle ? 'text-accentDark' : ''
         }`}
         aria-label="Shuffle"
@@ -35,7 +35,7 @@ function ExtraControls() {
       <button
         type="button"
         onClick={() => setIsRepeat(!isRepeat)}
-        className={`p-2 rounded-full hover:bg-surfaceMuted/60 dark:hover:bg-backgroundDark/80 transition-colors ${
+        className={`p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors ${
           isRepeat ? 'text-accentDark' : ''
         }`}
         aria-label="Repeat"
@@ -45,7 +45,7 @@ function ExtraControls() {
 
       <Popover className="relative">
         <PopoverButton
-          className="p-2 rounded-full hover:bg-surfaceMuted/80 dark:hover:bg-backgroundDark/80 transition-colors border border-white/40 dark:border-white/10 bg-white/50 dark:bg-backgroundDark/70 shadow-soft"
+          className="p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt transition-colors border border-borderLight dark:border-borderDark bg-panelLight dark:bg-panelDark shadow-soft"
           aria-label="Volume"
         >
           {volume > 0 ? (
@@ -55,7 +55,7 @@ function ExtraControls() {
           )}
         </PopoverButton>
 
-        <PopoverPanel className="absolute right-0 sm:right-0 bottom-16 sm:bottom-18 w-16 bg-white/95 dark:bg-backgroundDark/95 border border-white/60 dark:border-white/10 rounded-2xl shadow-glass p-3 flex flex-col items-center gap-2 backdrop-blur origin-bottom z-[90]">
+        <PopoverPanel className="absolute right-0 sm:right-0 bottom-16 sm:bottom-18 w-16 bg-panelLight dark:bg-panelDark border border-borderLight dark:border-borderDark rounded-2xl shadow-glass p-3 flex flex-col items-center gap-2 backdrop-blur origin-bottom z-[90]">
           <span className="text-[11px] font-semibold text-muted">Vol</span>
           <div className="relative h-28 flex items-center justify-center px-1">
             <div className="absolute inset-x-1 h-full rounded-full bg-gradient-to-b from-pastelPurple/20 via-accentLight/15 to-backgroundDark/20" />

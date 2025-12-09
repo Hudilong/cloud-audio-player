@@ -32,7 +32,7 @@ export default function InputField({
           }
           onChange={onChange}
           readOnly={readOnly}
-          className="w-full px-3 py-3 bg-white/80 dark:bg-backgroundDark/70 border border-white/70 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-accentLight/40"
+          className="w-full px-3 py-3 bg-panelLightAlt dark:bg-panelDark border border-borderLight dark:border-borderDark rounded-xl focus:outline-none focus:ring-2 focus:ring-accentLight/40"
           required={!readOnly}
         />
       </label>

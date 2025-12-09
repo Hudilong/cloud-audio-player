@@ -20,6 +20,12 @@ export default {
         muted: '#6B7280',
         surface: '#FFFFFF',
         surfaceMuted: '#F2F2FB',
+        panelLight: '#FFFFFF',
+        panelLightAlt: '#F4F1FF',
+        panelDark: '#141836',
+        panelDarkAlt: '#1B2148',
+        borderLight: '#E4DDFF',
+        borderDark: '#262C52',
       },
       spacing: {
         4.5: '1.125rem', // Custom spacing: 4.5 = 18px

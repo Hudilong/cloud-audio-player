@@ -17,7 +17,7 @@ function PlayerControls() {
       <button
         type="button"
         onClick={handlePrevious}
-        className="p-2 rounded-full hover:bg-surfaceMuted/80 dark:hover:bg-backgroundDark/80 hover:text-textLight transition-colors"
+        className="p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors"
         aria-label="Previous"
       >
         <FiSkipBack className="h-5 w-5" />
@@ -39,7 +39,7 @@ function PlayerControls() {
       <button
         type="button"
         onClick={handleNext}
-        className="p-2 rounded-full hover:bg-surfaceMuted/80 dark:hover:bg-backgroundDark/80 hover:text-textLight transition-colors"
+        className="p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors"
         aria-label="Next"
       >
         <FiSkipForward className="h-5 w-5" />

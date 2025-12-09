@@ -37,7 +37,7 @@ function FileUploadForm({
         </p>
         <label
           htmlFor="file"
-          className="group relative block w-full rounded-2xl border border-dashed border-white/70 dark:border-white/10 bg-white/70 dark:bg-backgroundDark/60 px-4 py-6 text-center cursor-pointer hover:border-accentLight/70 hover:shadow-glass transition-all"
+          className="group relative block w-full rounded-2xl border border-dashed border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark px-4 py-6 text-center cursor-pointer hover:border-accentLight/70 hover:shadow-glass transition-all"
         >
           <input
             id="file"

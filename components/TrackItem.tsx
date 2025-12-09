@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import Image from 'next/image';
-import { FiPlay } from 'react-icons/fi';
+import { FiPause, FiPlay } from 'react-icons/fi';
 import { Track } from '@prisma/client';
+import { PlayerContext } from '@/context/PlayerContext';
 import ContextualMenu from './ContextualMenu';
 import { Item } from '../types/item';
 import { formatTime } from '../utils/formatTime';
@@ -25,6 +26,10 @@ export default function TrackItem({
   onPlayNext,
   onAddToPlaylist,
 }: TrackItemProps) {
+  const player = useContext(PlayerContext);
+  const isCurrentTrack = player?.track?.id === track.id;
+  const isPlayingCurrent = isCurrentTrack && player?.isPlaying;
+
   // Define menu items
   const menuItems: Item[] = [
     {
@@ -46,15 +51,21 @@ export default function TrackItem({
   ];
 
   return (
-    <li className="relative flex items-center justify-between gap-3 py-3 px-4 rounded-xl border border-white/70 dark:border-white/10 bg-white/70 dark:bg-backgroundDark/70 hover:shadow-glass hover:border-accentLight/40 dark:hover:border-accentLight/30 hover:bg-white dark:hover:bg-backgroundDark/80 transition-all duration-200 overflow-visible hover:z-40 focus-within:z-40">
+    <li className="relative flex items-center justify-between gap-3 py-3 px-4 rounded-xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark hover:shadow-glass hover:border-accentLight/60 dark:hover:border-accentLight/50 transition-all duration-200 overflow-visible hover:z-40 focus-within:z-40">
       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
         <button
           type="button"
-          onClick={() => onSelect(track)}
+          onClick={() => {
+            if (isCurrentTrack && player?.togglePlayPause) {
+              player.togglePlayPause();
+            } else {
+              onSelect(track);
+            }
+          }}
           className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-pastelPurple to-accentLight text-white shadow-soft hover:shadow-glass focus:outline-none flex-shrink-0"
-          aria-label="Play"
+          aria-label={isPlayingCurrent ? 'Pause' : 'Play'}
         >
-          <FiPlay />
+          {isPlayingCurrent ? <FiPause /> : <FiPlay />}
         </button>
         <Image
           width={48}

@@ -90,7 +90,7 @@ export default async function Home() {
           </div>
 
           <div className="relative">
-            <div className="relative overflow-hidden rounded-[28px] bg-white/80 dark:bg-backgroundDark/90 border border-white/60 dark:border-white/10 shadow-glass backdrop-blur-xl p-6 sm:p-7">
+            <div className="relative overflow-hidden rounded-[28px] bg-panelLight dark:bg-panelDark border border-borderLight dark:border-borderDark shadow-glass p-6 sm:p-7">
               <div className="absolute inset-0 opacity-70">
                 <div className="absolute -left-8 -top-6 h-32 w-32 bg-pastelPurple/30 blur-3xl" />
                 <div className="absolute right-0 -bottom-10 h-40 w-40 bg-accentLight/25 blur-3xl" />
@@ -148,7 +148,7 @@ export default async function Home() {
           {featureCards.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-backgroundDark/80 backdrop-blur p-5 shadow-soft hover:shadow-glass transition-shadow"
+              className="rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark p-5 shadow-soft hover:shadow-glass transition-shadow"
             >
               <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-pastelPurple to-accentLight text-white shadow-soft">
                 {feature.icon}
