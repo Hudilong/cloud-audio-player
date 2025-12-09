@@ -40,19 +40,16 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 
    ```env
    DATABASE_URL=your_prisma_database_url
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    NEXTAUTH_SECRET=your_nextauth_secret
    NEXTAUTH_URL=http://localhost:3000
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
-   AWS_ACCESS_KEY_ID=your_aws_access_key_id
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-   AWS_REGION=your_aws_region
-   AWS_S3_BUCKET_NAME=your_s3_bucket_name
-   NEXT_PUBLIC_AWS_REGION=your_aws_region
-   NEXT_PUBLIC_AWS_S3_BUCKET_NAME=your_s3_bucket_name
+   BUCKET_ENDPOINT=your_bucket_endpoint # e.g. https://<id>.up.railway.app
+   BUCKET_REGION=auto
+   BUCKET_NAME=your_bucket_name
+   BUCKET_ACCESS_KEY_ID=your_bucket_access_key
+   BUCKET_SECRET_ACCESS_KEY=your_bucket_secret_key
+   NEXT_PUBLIC_BUCKET_URL=optional_public_base_url
    ```
 
 4. **Run Database Migrations:**

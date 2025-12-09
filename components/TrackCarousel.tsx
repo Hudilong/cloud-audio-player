@@ -11,12 +11,18 @@ interface TrackCarouselProps {
   tracks: Track[];
   onSelect: (track: Track) => void;
   onDelete: (track: Track) => void;
+  onAddToQueue?: (track: Track) => void;
+  onPlayNext?: (track: Track) => void;
+  onAddToPlaylist?: (track: Track) => void;
 }
 
 export default function TrackCarousel({
   tracks,
   onSelect,
   onDelete,
+  onAddToQueue,
+  onPlayNext,
+  onAddToPlaylist,
 }: TrackCarouselProps) {
   return (
     <Swiper
@@ -42,7 +48,14 @@ export default function TrackCarousel({
     >
       {tracks.map((track) => (
         <SwiperSlide key={track.id}>
-          <TrackCard track={track} onSelect={onSelect} onDelete={onDelete} />
+          <TrackCard
+            track={track}
+            onSelect={onSelect}
+            onDelete={onDelete}
+            onAddToQueue={onAddToQueue || (() => {})}
+            onPlayNext={onPlayNext || (() => {})}
+            onAddToPlaylist={onAddToPlaylist || (() => {})}
+          />
         </SwiperSlide>
       ))}
     </Swiper>
