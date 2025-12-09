@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AWS from 'aws-sdk';
 import { nanoid } from 'nanoid';
 import { getServerSession } from 'next-auth';
 import { fileTypeFromBuffer } from 'file-type';
-import { authOptions } from '../../../../utils/authOptions';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { authOptions } from '@utils/authOptions';
 
-AWS.config.update({
-  region: process.env.S3_REGION!,
-  accessKeyId: process.env.S3_ACCESS_KEY!,
-  secretAccessKey: process.env.S3_SECRET_KEY!,
+const s3 = new S3Client({
+  region: process.env.BUCKET_REGION!,
+  endpoint: process.env.BUCKET_ENDPOINT!,
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.BUCKET_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY!,
+  },
 });
-
-const s3 = new AWS.S3();
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -42,15 +45,14 @@ export async function POST(request: NextRequest) {
   const fileExtension = name.substring(name.lastIndexOf('.'));
   const fileName = `${nanoid()}${fileExtension}`;
 
-  const s3Params = {
-    Bucket: process.env.S3_BUCKET_NAME!,
-    Key: fileName,
-    Expires: 600,
-    ContentType: type,
-  };
-
   try {
-    const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+    const command = new PutObjectCommand({
+      Bucket: process.env.BUCKET_NAME!,
+      Key: fileName,
+      ContentType: type,
+    });
+
+    const uploadURL = await getSignedUrl(s3, command, { expiresIn: 600 });
 
     return NextResponse.json({ uploadURL, key: fileName });
   } catch {

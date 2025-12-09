@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AWS from 'aws-sdk';
 import { getServerSession } from 'next-auth';
-import prisma from '@/../utils/prisma';
-import { authOptions } from '../../../../utils/authOptions';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import prisma from '@utils/prisma';
+import { authOptions } from '@utils/authOptions';
 
-AWS.config.update({
-  region: process.env.S3_REGION!,
-  accessKeyId: process.env.S3_ACCESS_KEY!,
-  secretAccessKey: process.env.S3_SECRET_KEY!,
+const s3 = new S3Client({
+  region: process.env.BUCKET_REGION!,
+  endpoint: process.env.BUCKET_ENDPOINT!,
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.BUCKET_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY!,
+  },
 });
-
-const s3 = new AWS.S3();
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -34,14 +37,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
   }
 
-  const s3Params = {
-    Bucket: process.env.S3_BUCKET_NAME!,
-    Key: audio.s3Key,
-    Expires: 60,
-  };
-
   try {
-    const deleteURL = await s3.getSignedUrlPromise('deleteObject', s3Params);
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.BUCKET_NAME!,
+      Key: audio.s3Key,
+    });
+
+    const deleteURL = await getSignedUrl(s3, command, { expiresIn: 60 });
 
     return NextResponse.json({ deleteURL }, { status: 200 });
   } catch {
