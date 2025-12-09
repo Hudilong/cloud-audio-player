@@ -9,16 +9,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Light theme colors
-        pastelPurple: '#C3A6FF',
-        backgroundLight: '#FFFFFF',
-        textLight: '#333333',
-        accentLight: '#FFB6C1', // Light pink for accents
-
-        // Dark theme colors
-        backgroundDark: '#1E1E2E',
-        textDark: '#E2E2E2',
-        accentDark: '#FF6EC7', // Vibrant pink for accents
+        pastelPurple: '#C6B4FF',
+        backgroundLight: '#F7F7FF',
+        backgroundDark: '#0E1024',
+        textLight: '#0F1024',
+        textDark: '#E9EAF7',
+        accentLight: '#FF8EC7',
+        accentDark: '#FF6EC7',
+        ink: '#0B0C1C',
+        muted: '#6B7280',
+        surface: '#FFFFFF',
+        surfaceMuted: '#F2F2FB',
+        panelLight: '#FFFFFF',
+        panelLightAlt: '#F4F1FF',
+        panelDark: '#141836',
+        panelDarkAlt: '#1B2148',
+        borderLight: '#E4DDFF',
+        borderDark: '#262C52',
       },
       spacing: {
         4.5: '1.125rem', // Custom spacing: 4.5 = 18px
@@ -26,8 +33,12 @@ export default {
         72: '18rem', // Custom spacing: 72 = 288px
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'sans-serif'],
-        display: ['var(--font-poppins)', 'sans-serif'],
+        sans: ['var(--font-space-grotesk)', 'var(--font-inter)', 'sans-serif'],
+        display: [
+          'var(--font-poppins)',
+          'var(--font-space-grotesk)',
+          'sans-serif',
+        ],
       },
       fontSize: {
         xs: ['0.75rem', '1rem'], // Extra small
@@ -46,6 +57,7 @@ export default {
       boxShadow: {
         soft: '0 4px 8px rgba(0, 0, 0, 0.1)', // Custom soft shadow
         heavy: '0 8px 16px rgba(0, 0, 0, 0.2)', // Custom heavy shadow
+        glass: '0 12px 40px rgba(124, 58, 237, 0.12)',
       },
     },
   },

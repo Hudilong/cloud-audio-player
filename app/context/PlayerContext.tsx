@@ -104,6 +104,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else if (isRepeat) {
       setCurrentTrackIndex(queue.length - 1);
     }
+    setCurrentTime(0);
+    setIsPlaying(true);
   }, [isShuffle, currentTrackIndex, isRepeat, queue.length, playRandomTrack]);
 
   const handleNext = useCallback(() => {
@@ -114,6 +116,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else if (isRepeat) {
       setCurrentTrackIndex(0);
     }
+    setCurrentTime(0);
+    setIsPlaying(true);
   }, [isShuffle, currentTrackIndex, queue.length, isRepeat, playRandomTrack]);
 
   useEffect(() => {

@@ -3,19 +3,50 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f7ff;
+  --foreground: #0f1024;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0e1024;
+    --foreground: #e9eaf7;
   }
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(
+      120% 120% at 20% 20%,
+      rgba(198, 180, 255, 0.25),
+      transparent
+    ),
+    radial-gradient(120% 140% at 80% 0%, rgba(255, 142, 199, 0.2), transparent),
+    linear-gradient(180deg, #f7f7ff 0%, #ffffff 50%, #f9f6ff 100%);
+  font-family:
+    var(--font-space-grotesk),
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: radial-gradient(
+        90% 90% at 20% 20%,
+        rgba(198, 180, 255, 0.12),
+        transparent
+      ),
+      radial-gradient(
+        90% 100% at 80% 0%,
+        rgba(255, 142, 199, 0.12),
+        transparent
+      ),
+      linear-gradient(180deg, #0e1024 0%, #0b0e1f 100%);
+  }
+}
+
+::selection {
+  background: rgba(255, 142, 199, 0.25);
 }

@@ -12,7 +12,9 @@
     "check": "next lint && prettier --check .",
     "fix": "next lint --fix && prettier --write .",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.vitest.json --noEmit"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

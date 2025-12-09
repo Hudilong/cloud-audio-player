@@ -10,52 +10,39 @@ export default function Navbar() {
   const { status } = useSession(); // Destructure session and status
 
   return (
-    <>
-      {/* Top Navbar */}
-      <nav className="flex justify-between items-center px-4 sm:px-8 h-full w-full">
-        {/* Left Section: Logo and Links */}
-        <div className="flex items-center gap-8 flex-grow">
+    <nav className="w-full">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 h-full flex items-center justify-between gap-4">
+        {/* Left Section */}
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
-            className="text-2xl"
+            className="flex items-center gap-3"
             href={status === 'authenticated' ? '/library' : '/'}
           >
-            <Image
-              width={48}
-              height={48}
-              src="/default-thumbnail.png"
-              alt="logo"
-              className="rounded-2xl w-8 h-8 sm:w-12 sm:h-12 object-cover"
-            />
+            <div className="p-[2px] rounded-2xl bg-gradient-to-br from-pastelPurple to-accentLight">
+              <Image
+                width={48}
+                height={48}
+                src="/default-thumbnail.png"
+                alt="logo"
+                className="rounded-xl w-9 h-9 sm:w-12 sm:h-12 object-cover bg-surface"
+              />
+            </div>
+            <div className="hidden sm:flex flex-col justify-center leading-tight">
+              <span className="text-[12px] uppercase tracking-[0.2em] text-muted leading-[1.2]">
+                Streamstress
+              </span>
+              <span className="text-base font-semibold text-textLight dark:text-white leading-[1.2]">
+                Your cloud music hub
+              </span>
+            </div>
           </Link>
-          {/* Links */}
-          <ul className="hidden sm:flex items-center gap-8">
-            {status === 'authenticated' && (
-              <>
-                <li>
-                  <Link href="/library" className="hover:underline">
-                    Library
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/playlists" className="hover:underline">
-                    Playlists
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/upload" className="hover:underline">
-                    Upload
-                  </Link>
-                </li>
-              </>
-            )}
-          </ul>
         </div>
 
-        {/* Right Section: UserMenu */}
-        <div className="flex items-center">
+        {/* Right Section */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <UserMenu />
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

@@ -12,8 +12,8 @@ function ProgressBar() {
   const { track, currentTime, handleSeek } = playerContext;
 
   return (
-    <div className="flex items-center w-full">
-      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+    <div className="flex items-center w-full gap-2">
+      <span className="text-[11px] sm:text-xs text-muted">
         {formatTime(currentTime)}
       </span>
       <input
@@ -22,9 +22,9 @@ function ProgressBar() {
         max={track?.duration || 0}
         value={currentTime}
         onChange={(e) => handleSeek(parseFloat(e.target.value))}
-        className="flex-1 mx-2 h-1 sm:h-2 appearance-none bg-gray-300 dark:bg-gray-700 rounded-full accent-gray-600 dark:accent-gray-400"
+        className="flex-1 h-2 appearance-none rounded-full bg-gradient-to-r from-white/70 via-surfaceMuted to-white/70 dark:from-backgroundDark/60 dark:via-backgroundDark/70 dark:to-backgroundDark/60 accent-accentDark cursor-pointer shadow-inner"
       />
-      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+      <span className="text-[11px] sm:text-xs text-muted">
         {formatTime(track?.duration || 0)}
       </span>
     </div>
