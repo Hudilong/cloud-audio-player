@@ -9,23 +9,23 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 - **Music Playback**: Stream your music on the go.
 - **Responsive Design**: Optimized for all devices.
 - **Authentication**: Secure user accounts with authentication.
-- **Cloud Storage**: Store audio files efficiently using AWS S3.
+- **Object Storage**: Store audio files in any S3-compatible bucket (MinIO works well for local development).
 
 ## Tech Stack
 
 - **Frontend**: [Next.js](https://nextjs.org/) with app routes, [TypeScript](https://www.typescriptlang.org/), and [Tailwind CSS](https://tailwindcss.com/).
 - **Backend**: [Prisma](https://www.prisma.io/) for ORM and database integration.
-- **Database**: [Supabase](https://supabase.com/) for database.
-- **File Storage**: [AWS S3](https://aws.amazon.com/s3/) for storage.
-- **CI/CD**: [Vercel](https://vercel.com/) for deployment and [GitHub Actions](https://github.com/features/actions) for continuous integration.
+- **Database**: PostgreSQL (self-hosted or managed).
+- **File Storage**: Any S3-compatible object storage (e.g., MinIO locally, your preferred provider in production).
+- **CI**: [GitHub Actions](https://github.com/features/actions) for linting and tests.
 
 ## Setup and Installation
 
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/hudilong/cloud-audio-player.git
-   cd cloud-audio-player
+   git clone <repo-url> streaming-platform
+   cd streaming-platform
    ```
 
 2. **Install Dependencies:**
@@ -39,18 +39,21 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
    Create a `.env` file in the root of your project and add the following variables:
 
    ```env
-   DATABASE_URL=your_prisma_database_url
+   DATABASE_URL=postgresql://user:password@host:port/dbname
+   DIRECT_URL=postgresql://user:password@host:port/dbname
    NEXTAUTH_SECRET=your_nextauth_secret
    NEXTAUTH_URL=http://localhost:3000
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
-   BUCKET_ENDPOINT=your_bucket_endpoint # e.g. https://<id>.up.railway.app
+   BUCKET_ENDPOINT=http://localhost:9000 # MinIO example; use your provider endpoint in prod
    BUCKET_REGION=auto
    BUCKET_NAME=your_bucket_name
    BUCKET_ACCESS_KEY_ID=your_bucket_access_key
    BUCKET_SECRET_ACCESS_KEY=your_bucket_secret_key
-   NEXT_PUBLIC_BUCKET_URL=optional_public_base_url
+   NEXT_PUBLIC_BUCKET_URL=http://localhost:9000/your_bucket_name # Optional public base URL
    ```
+
+   Use any PostgreSQL instance for `DATABASE_URL`. Any S3-compatible service works for object storage; MinIO is an easy option for local development.
 
 4. **Run Database Migrations:**
 
@@ -70,14 +73,21 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 
 ## Deployment
 
-The project is deployed using [Vercel](https://vercel.com/). Push to the `main` branch to trigger deployment. The `dev` branch is used for previews.
+Build and run wherever you can host a Next.js app (container platform, VM, or managed Node host):
+
+```bash
+pnpm build
+pnpm start
+```
+
+Provide the same environment variables used in development to your hosting platform.
 
 ## CI/CD Workflow
 
-GitHub Actions is configured to handle CI/CD:
+GitHub Actions is configured to handle CI:
 
-- **Main Branch**: Deploys to production on Vercel.
-- **Dev Branch**: Deploys to a Vercel preview environment.
+- **Main Branch**: Runs linting and tests on push.
+- **Dev Branch**: Runs linting and tests on pull requests.
 - **Feature Branches**: Based on `dev` for isolated feature development.
 
 ## Contributing
@@ -96,8 +106,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 - [Next.js](https://nextjs.org/)
 - [Prisma](https://www.prisma.io/)
-- [Supabase](https://supabase.com/)
+- [PostgreSQL](https://www.postgresql.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Vercel](https://vercel.com/)
 - [GitHub Actions](https://github.com/features/actions)
-- [AWS S3](https://aws.amazon.com/s3/)
+- [MinIO](https://min.io/) / S3-compatible storage providers
