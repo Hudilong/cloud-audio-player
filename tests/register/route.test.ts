@@ -1,9 +1,9 @@
 import { POST } from '@/api/auth/register/route';
-import bcrypt from 'bcrypt';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-const { mockUserCreate } = vi.hoisted(() => ({
+const { mockUserCreate, mockHash } = vi.hoisted(() => ({
   mockUserCreate: vi.fn(),
+  mockHash: vi.fn(),
 }));
 
 vi.mock('@utils/prisma', () => ({
@@ -12,6 +12,13 @@ vi.mock('@utils/prisma', () => ({
     user: {
       create: mockUserCreate,
     },
+  },
+}));
+
+vi.mock('bcrypt', () => ({
+  __esModule: true,
+  default: {
+    hash: mockHash,
   },
 }));
 
@@ -52,9 +59,7 @@ describe('POST /api/auth/register', () => {
 
   it('should hash the password and create a user successfully', async () => {
     const mockHashedPassword = 'hashedpassword123';
-    const bcryptHashSpy = vi
-      .spyOn(bcrypt, 'hash')
-      .mockResolvedValue(mockHashedPassword);
+    mockHash.mockResolvedValue(mockHashedPassword);
 
     mockUserCreate.mockResolvedValue({ id: 'test-id' });
 
@@ -66,7 +71,7 @@ describe('POST /api/auth/register', () => {
 
     const response = await POST(buildRequest(userPayload));
 
-    expect(bcryptHashSpy).toHaveBeenCalledWith(userPayload.password, 10);
+    expect(mockHash).toHaveBeenCalledWith(userPayload.password, 10);
     expect(mockUserCreate).toHaveBeenCalledWith({
       data: {
         email: userPayload.email,
