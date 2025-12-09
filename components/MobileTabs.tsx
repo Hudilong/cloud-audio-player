@@ -13,6 +13,12 @@ export default function MobileTabs() {
         Library
       </Link>
       <Link
+        href="/playlists"
+        className="flex-1 text-center text-sm font-medium hover:text-accentDark transition-colors duration-200"
+      >
+        Playlists
+      </Link>
+      <Link
         href="/upload"
         className="flex-1 text-center text-sm font-medium hover:text-accentDark transition-colors duration-200"
       >

@@ -37,6 +37,11 @@ export default function Navbar() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/playlists" className="hover:underline">
+                    Playlists
+                  </Link>
+                </li>
+                <li>
                   <Link href="/upload" className="hover:underline">
                     Upload
                   </Link>
