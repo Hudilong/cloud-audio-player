@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import TrackCard from '../../components/TrackCard';
 import TrackListView from '../../components/TrackListView';
+import PlaylistPickerModal from '../../components/PlaylistPickerModal';
+import { PlaylistWithTracks } from '../../types/playlist';
 
 export default function Library(): JSX.Element {
   const { status } = useSession();
@@ -16,12 +18,40 @@ export default function Library(): JSX.Element {
   const [library, setLibrary] = useState<Track[]>([]);
   const [view, setView] = useState<'card' | 'list'>('list');
   const [errorDisplay, setErrordisplay] = useState<string | null>(null); // Error state
+  const [playlists, setPlaylists] = useState<PlaylistWithTracks[]>([]);
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+  const [playlistError, setPlaylistError] = useState<string | null>(null);
+  const [playlistName, setPlaylistName] = useState('');
+  const [trackToAdd, setTrackToAdd] = useState<Track | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
   }, [status, router]);
+
+  useEffect(() => {
+    async function fetchPlaylists() {
+      try {
+        const res = await fetch('/api/playlists');
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Failed to load playlists.');
+
+        setPlaylists(data.playlists || []);
+        setPlaylistError(null);
+      } catch (error) {
+        setPlaylistError(
+          error instanceof Error ? error.message : 'Failed to load playlists.',
+        );
+      }
+    }
+
+    if (status === 'authenticated') {
+      fetchPlaylists();
+    }
+  }, [status]);
 
   if (!playerContext) {
     throw new Error('Library must be used within a PlayerProvider');
@@ -32,9 +62,10 @@ export default function Library(): JSX.Element {
     setCurrentTime,
     setIsPlaying,
     setCurrentTrackIndex,
-    setPlaylist,
+    setQueue,
   } = playerContext;
 
+  // Fetch user tracks
   useEffect(() => {
     async function fetchTracks() {
       try {
@@ -56,8 +87,108 @@ export default function Library(): JSX.Element {
     fetchTracks();
   }, []);
 
+  const openPlaylistModal = (selectedTrack: Track) => {
+    setTrackToAdd(selectedTrack);
+    setPlaylistModalOpen(true);
+    setPlaylistError(null);
+  };
+
+  const addTrackToPlaylist = async (playlistId: string, trackId: string) => {
+    setPlaylistLoading(true);
+    try {
+      const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to add to playlist.');
+
+      if (data.playlist) {
+        setPlaylists((prev) => {
+          const exists = prev.some(
+            (playlist) => playlist.id === data.playlist.id,
+          );
+          if (exists) {
+            return prev.map((playlist) =>
+              playlist.id === data.playlist.id ? data.playlist : playlist,
+            );
+          }
+          return [data.playlist, ...prev];
+        });
+      }
+
+      setPlaylistModalOpen(false);
+      setPlaylistName('');
+      setTrackToAdd(null);
+      setPlaylistError(null);
+    } catch (error) {
+      setPlaylistError(
+        error instanceof Error ? error.message : 'Failed to add to playlist.',
+      );
+    } finally {
+      setPlaylistLoading(false);
+    }
+  };
+
+  const handleSelectPlaylist = (playlistId: string) => {
+    if (trackToAdd) {
+      addTrackToPlaylist(playlistId, trackToAdd.id);
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!playlistName.trim()) {
+      setPlaylistError('Please enter a playlist name.');
+      return;
+    }
+
+    setPlaylistLoading(true);
+    try {
+      const res = await fetch('/api/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: playlistName.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to create playlist.');
+
+      const newPlaylist: PlaylistWithTracks = {
+        ...data.playlist,
+        playlistTracks: [],
+      };
+
+      setPlaylists((prev) => [newPlaylist, ...prev]);
+      setPlaylistError(null);
+      setPlaylistName('');
+
+      if (trackToAdd) {
+        await addTrackToPlaylist(newPlaylist.id, trackToAdd.id);
+      } else {
+        setPlaylistModalOpen(false);
+      }
+    } catch (error) {
+      setPlaylistError(
+        error instanceof Error ? error.message : 'Failed to create playlist.',
+      );
+    } finally {
+      setPlaylistLoading(false);
+    }
+  };
+
+  const closePlaylistModal = () => {
+    setPlaylistModalOpen(false);
+    setPlaylistName('');
+    setPlaylistError(null);
+    setTrackToAdd(null);
+  };
+
   const handleTrackSelect = (selectedTrack: Track) => {
-    setPlaylist(library);
+    setQueue(library);
     const index = library.findIndex((track) => track.id === selectedTrack.id);
     setCurrentTrackIndex(index);
     setTrack(selectedTrack);
@@ -65,9 +196,33 @@ export default function Library(): JSX.Element {
     setIsPlaying(true);
   };
 
-  const handleDeleteItemClicked = async (track: Track) => {
+  const handleAddTrackToQueue = (selectedTrack: Track) => {
+    setQueue((prevQueue) => [...prevQueue, selectedTrack]);
+  };
+
+  const handlePlayNext = (selectedTrack: Track) => {
+    setQueue((prevQueue) => {
+      // Find the currently playing track index (assumed to be the first in the queue)
+      const currentPlayingIndex = 0;
+
+      // Create a new queue with everything before the currently playing track and the selected track as the next
+      const newQueue = [
+        prevQueue[currentPlayingIndex], // Keep the currently playing track
+        selectedTrack, // Insert the selected track to play next
+        ...prevQueue.slice(currentPlayingIndex + 1), // Keep the rest of the queue
+      ].filter((track, index) => track.id !== selectedTrack.id || index === 1);
+
+      return newQueue;
+    });
+  };
+
+  const handleAddToPlaylist = (selectedTrack: Track) => {
+    openPlaylistModal(selectedTrack);
+  };
+
+  const handleDeleteTrack = async (selectedTrack: Track) => {
     try {
-      const res = await fetch(`/api/tracks/delete-url?id=${track.id}`);
+      const res = await fetch(`/api/tracks/delete-url?id=${selectedTrack.id}`);
       const { deleteURL, error } = await res.json();
 
       if (error) throw new Error(error);
@@ -78,12 +233,12 @@ export default function Library(): JSX.Element {
 
       if (!deleteResponse.ok) throw new Error('Failed to delete file');
 
-      await fetch(`/api/tracks/${track.id}`, {
+      await fetch(`/api/tracks/${selectedTrack.id}`, {
         method: 'DELETE',
       });
 
       setLibrary((prevLibrary) =>
-        prevLibrary.filter((item) => item.id !== track.id),
+        prevLibrary.filter((item) => item.id !== selectedTrack.id),
       );
     } catch {
       setErrordisplay('Failed to delete the track. Please try again.');
@@ -138,7 +293,10 @@ export default function Library(): JSX.Element {
               key={track.id}
               track={track}
               onSelect={handleTrackSelect}
-              onDelete={handleDeleteItemClicked}
+              onDelete={handleDeleteTrack}
+              onAddToQueue={handleAddTrackToQueue}
+              onPlayNext={handlePlayNext}
+              onAddToPlaylist={handleAddToPlaylist}
             />
           ))}
         </div>
@@ -146,9 +304,25 @@ export default function Library(): JSX.Element {
         <TrackListView
           tracks={library}
           onSelect={handleTrackSelect}
-          onDelete={handleDeleteItemClicked}
+          onDelete={handleDeleteTrack}
+          onAddToQueue={handleAddTrackToQueue}
+          onPlayNext={handlePlayNext}
+          onAddToPlaylist={handleAddToPlaylist}
         />
       )}
+
+      <PlaylistPickerModal
+        isOpen={playlistModalOpen}
+        playlists={playlists}
+        trackTitle={trackToAdd?.title || trackToAdd?.s3Key}
+        newPlaylistName={playlistName}
+        loading={playlistLoading}
+        error={playlistError}
+        onClose={closePlaylistModal}
+        onSelectPlaylist={handleSelectPlaylist}
+        onCreatePlaylist={handleCreatePlaylist}
+        onPlaylistNameChange={setPlaylistName}
+      />
     </div>
   );
 }

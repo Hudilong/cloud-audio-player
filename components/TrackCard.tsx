@@ -11,17 +11,35 @@ interface TrackCardProps {
   track: Track;
   onSelect: (track: Track) => void;
   onDelete: (track: Track) => void;
+  onAddToQueue: (track: Track) => void;
+  onPlayNext: (track: Track) => void;
+  onAddToPlaylist: (track: Track) => void;
 }
 
 export default function TrackCard({
   track,
   onSelect,
   onDelete,
+  onAddToQueue,
+  onPlayNext,
+  onAddToPlaylist,
 }: TrackCardProps) {
   const menuItems: Item[] = [
     {
+      label: 'Add to Playlist',
+      onClick: () => onAddToPlaylist(track),
+    },
+    {
       label: 'Delete Track',
       onClick: () => onDelete(track),
+    },
+    {
+      label: 'Add to Queue',
+      onClick: () => onAddToQueue(track),
+    },
+    {
+      label: 'Play Next',
+      onClick: () => onPlayNext(track),
     },
   ];
   return (

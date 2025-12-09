@@ -7,6 +7,8 @@ import React, {
   useRef,
   useState,
   useCallback,
+  Dispatch,
+  SetStateAction,
 } from 'react';
 import { Track } from '@prisma/client';
 
@@ -15,21 +17,21 @@ interface PlayerContextProps {
   track: Track | null;
   currentTime: number;
   isPlaying: boolean;
-  playlist: Track[];
+  queue: Track[];
   currentTrackIndex: number;
   volume: number;
   isShuffle: boolean;
   isRepeat: boolean;
-  setTrack: (audio: Track | null) => void;
-  setCurrentTime: (position: number) => void;
+  setTrack: Dispatch<SetStateAction<Track | null>>;
+  setCurrentTime: Dispatch<SetStateAction<number>>;
   togglePlayPause: () => void;
-  setIsPlaying: (isPlaying: boolean) => void;
-  setPlaylist: (tracks: Track[]) => void;
-  setCurrentTrackIndex: (index: number) => void;
+  setIsPlaying: Dispatch<SetStateAction<boolean>>;
+  setQueue: Dispatch<SetStateAction<Track[]>>;
+  setCurrentTrackIndex: Dispatch<SetStateAction<number>>;
   handleVolumeChange: (volume: number) => void;
   toggleMute: () => void;
-  setIsShuffle: (shuffle: boolean) => void;
-  setIsRepeat: (repeat: boolean) => void;
+  setIsShuffle: Dispatch<SetStateAction<boolean>>;
+  setIsRepeat: Dispatch<SetStateAction<boolean>>;
   handleSeek: (time: number) => void;
   handlePrevious: () => void;
   handleNext: () => void;
@@ -44,7 +46,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [track, setTrack] = useState<Track | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playlist, setPlaylist] = useState<Track[]>([]);
+  const [queue, setQueue] = useState<Track[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(1);
@@ -81,18 +83,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playRandomTrack = useCallback(() => {
-    if (playlist.length === 0) return;
+    if (queue.length === 0) return;
 
-    let randomIndex = Math.floor(Math.random() * playlist.length);
+    let randomIndex = Math.floor(Math.random() * queue.length);
 
-    if (playlist.length > 1) {
+    if (queue.length > 1) {
       while (randomIndex === currentTrackIndex) {
-        randomIndex = Math.floor(Math.random() * playlist.length);
+        randomIndex = Math.floor(Math.random() * queue.length);
       }
     }
 
     setCurrentTrackIndex(randomIndex);
-  }, [playlist, currentTrackIndex]);
+  }, [queue, currentTrackIndex]);
 
   const handlePrevious = useCallback(() => {
     if (isShuffle) {
@@ -100,40 +102,28 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else if (currentTrackIndex > 0) {
       setCurrentTrackIndex(currentTrackIndex - 1);
     } else if (isRepeat) {
-      setCurrentTrackIndex(playlist.length - 1);
+      setCurrentTrackIndex(queue.length - 1);
     }
-  }, [
-    isShuffle,
-    currentTrackIndex,
-    isRepeat,
-    playlist.length,
-    playRandomTrack,
-  ]);
+  }, [isShuffle, currentTrackIndex, isRepeat, queue.length, playRandomTrack]);
 
   const handleNext = useCallback(() => {
     if (isShuffle) {
       playRandomTrack();
-    } else if (currentTrackIndex < playlist.length - 1) {
+    } else if (currentTrackIndex < queue.length - 1) {
       setCurrentTrackIndex(currentTrackIndex + 1);
     } else if (isRepeat) {
       setCurrentTrackIndex(0);
     }
-  }, [
-    isShuffle,
-    currentTrackIndex,
-    playlist.length,
-    isRepeat,
-    playRandomTrack,
-  ]);
+  }, [isShuffle, currentTrackIndex, queue.length, isRepeat, playRandomTrack]);
 
   useEffect(() => {
-    if (!audioRef.current || !playlist[currentTrackIndex]) return;
-    setTrack(playlist[currentTrackIndex]);
+    if (!audioRef.current || !queue[currentTrackIndex]) return;
+    setTrack(queue[currentTrackIndex]);
 
     if (isPlaying) {
       audioRef.current.play().catch(() => {});
     }
-  }, [currentTrackIndex, playlist, isPlaying]);
+  }, [currentTrackIndex, queue, isPlaying]);
 
   useEffect(() => {
     const audioPlayer = audioRef.current;
@@ -157,7 +147,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       track,
       currentTime,
       isPlaying,
-      playlist,
+      queue,
       currentTrackIndex,
       volume,
       isShuffle,
@@ -165,7 +155,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setTrack,
       setCurrentTime,
       setIsPlaying,
-      setPlaylist,
+      setQueue,
       setCurrentTrackIndex,
       setIsShuffle,
       setIsRepeat,
@@ -180,7 +170,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       track,
       currentTime,
       isPlaying,
-      playlist,
+      queue,
       currentTrackIndex,
       volume,
       isShuffle,
