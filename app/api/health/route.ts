@@ -55,12 +55,7 @@ export async function GET() {
       'Missing BUCKET_NAME, BUCKET_REGION or bucket credentials';
   } else {
     try {
-      const s3 = createS3Client(
-        region,
-        endpoint,
-        accessKeyId,
-        secretAccessKey,
-      );
+      const s3 = createS3Client(region, endpoint, accessKeyId, secretAccessKey);
       await s3.send(new HeadBucketCommand({ Bucket: bucketName }));
     } catch (error) {
       storageStatus.status = 'error';

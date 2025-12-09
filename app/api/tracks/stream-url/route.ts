@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ streamURL }, { status: 200 });
   } catch (error) {
+    // eslint-disable-next-line no-console -- Log the underlying error to aid debugging when S3 signing fails.
     console.error('Error generating pre-signed URL', error);
     const publicUrl = getPublicUrl(audio.s3Key);
     if (publicUrl) {

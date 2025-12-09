@@ -1,57 +1,51 @@
-import request from 'supertest';
-import { createServer } from 'http';
-import app from '@/app'; // Adjust if you're using a custom server setup
-import prisma from '@/../utils/prisma';
+import { POST } from '@/api/auth/register/route';
 import bcrypt from 'bcrypt';
-import {
-  describe,
-  expect,
-  it,
-  beforeAll,
-  beforeEach,
-  vi,
-  afterAll,
-} from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-vi.mock('@/../utils/prisma', () => ({
-  user: {
-    create: vi.fn(),
+const { mockUserCreate } = vi.hoisted(() => ({
+  mockUserCreate: vi.fn(),
+}));
+
+vi.mock('@utils/prisma', () => ({
+  __esModule: true,
+  default: {
+    user: {
+      create: mockUserCreate,
+    },
   },
 }));
 
-describe('POST /api/register', () => {
-  let server: ReturnType<typeof createServer>;
-
-  beforeAll(() => {
-    server = createServer(app.handler); // Use `next.js` API handler or custom handler
+const buildRequest = (body: Record<string, unknown>) =>
+  new Request('http://localhost/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(body),
   });
 
-  afterAll((done) => {
-    server.close(done);
-  });
-
+describe('POST /api/auth/register', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should return 400 if email or password is missing', async () => {
-    const response = await request(server)
-      .post('/api/register')
-      .send({ email: 'test@example.com' }); // Missing password
+    const response = await POST(
+      buildRequest({ email: 'test@example.com' /* Missing password */ }),
+    );
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    const body = await response.json();
+    expect(body).toEqual({
       error: 'Email and password are required',
     });
   });
 
   it('should return 400 if email is invalid', async () => {
-    const response = await request(server)
-      .post('/api/register')
-      .send({ email: 'invalid-email', password: 'password123' });
+    const response = await POST(
+      buildRequest({ email: 'invalid-email', password: 'password123' }),
+    );
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    const body = await response.json();
+    expect(body).toEqual({
       error: 'Invalid email address',
     });
   });
@@ -62,18 +56,18 @@ describe('POST /api/register', () => {
       .spyOn(bcrypt, 'hash')
       .mockResolvedValue(mockHashedPassword);
 
+    mockUserCreate.mockResolvedValue({ id: 'test-id' });
+
     const userPayload = {
       email: 'valid@example.com',
       password: 'password123',
       name: 'Test User',
     };
 
-    const response = await request(server)
-      .post('/api/register')
-      .send(userPayload);
+    const response = await POST(buildRequest(userPayload));
 
     expect(bcryptHashSpy).toHaveBeenCalledWith(userPayload.password, 10);
-    expect(prisma.user.create).toHaveBeenCalledWith({
+    expect(mockUserCreate).toHaveBeenCalledWith({
       data: {
         email: userPayload.email,
         name: userPayload.name,
@@ -81,7 +75,8 @@ describe('POST /api/register', () => {
       },
     });
     expect(response.status).toBe(201);
-    expect(response.body).toEqual({
+    const body = await response.json();
+    expect(body).toEqual({
       message: 'User registered successfully',
     });
   });

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 import prisma from '@utils/prisma';
 
+type DBStatus = 'ok' | 'error';
+type StorageStatus = 'ok' | 'error' | 'not_configured';
+
 const createS3Client = (
   region: string,
   endpoint: string | undefined,
@@ -19,11 +22,8 @@ const createS3Client = (
   });
 
 export async function GET() {
-  const dbStatus: 'ok' | 'error' = 'ok';
-  const storageStatus: 'ok' | 'error' | 'not_configured' = 'ok';
-
-  let db: typeof dbStatus = 'ok';
-  let storage: typeof storageStatus = 'ok';
+  let db: DBStatus = 'ok';
+  let storage: StorageStatus = 'ok';
 
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -41,12 +41,7 @@ export async function GET() {
     storage = 'not_configured';
   } else {
     try {
-      const s3 = createS3Client(
-        region,
-        endpoint,
-        accessKeyId,
-        secretAccessKey,
-      );
+      const s3 = createS3Client(region, endpoint, accessKeyId, secretAccessKey);
       await s3.send(new HeadBucketCommand({ Bucket: bucketName }));
     } catch {
       storage = 'error';
