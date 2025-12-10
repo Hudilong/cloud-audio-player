@@ -21,7 +21,7 @@ interface PlayerContextProps {
   currentTrackIndex: number;
   volume: number;
   isShuffle: boolean;
-  isRepeat: boolean;
+  repeatMode: 'off' | 'queue' | 'track';
   setTrack: Dispatch<SetStateAction<Track | null>>;
   setCurrentTime: Dispatch<SetStateAction<number>>;
   togglePlayPause: () => void;
@@ -31,10 +31,11 @@ interface PlayerContextProps {
   handleVolumeChange: (volume: number) => void;
   toggleMute: () => void;
   setIsShuffle: Dispatch<SetStateAction<boolean>>;
-  setIsRepeat: Dispatch<SetStateAction<boolean>>;
+  setRepeatMode: Dispatch<SetStateAction<'off' | 'queue' | 'track'>>;
+  cycleRepeatMode: () => void;
   handleSeek: (time: number) => void;
   handlePrevious: () => void;
-  handleNext: () => void;
+  handleNext: (options?: { fromEnded?: boolean }) => void;
 }
 
 export const PlayerContext = createContext<PlayerContextProps | undefined>(
@@ -51,7 +52,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(1);
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
-  const [isRepeat, setIsRepeat] = useState<boolean>(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'queue' | 'track'>(
+    'off',
+  );
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
@@ -82,6 +85,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode((prev) => {
+      if (prev === 'off') return 'queue';
+      if (prev === 'queue') return 'track';
+      return 'off';
+    });
+  }, []);
+
   const playRandomTrack = useCallback(() => {
     if (queue.length === 0) return;
 
@@ -101,24 +112,49 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       playRandomTrack();
     } else if (currentTrackIndex > 0) {
       setCurrentTrackIndex(currentTrackIndex - 1);
-    } else if (isRepeat) {
+    } else if (repeatMode === 'queue') {
       setCurrentTrackIndex(queue.length - 1);
     }
     setCurrentTime(0);
     setIsPlaying(true);
-  }, [isShuffle, currentTrackIndex, isRepeat, queue.length, playRandomTrack]);
+  }, [isShuffle, currentTrackIndex, repeatMode, queue.length, playRandomTrack]);
 
-  const handleNext = useCallback(() => {
-    if (isShuffle) {
-      playRandomTrack();
-    } else if (currentTrackIndex < queue.length - 1) {
-      setCurrentTrackIndex(currentTrackIndex + 1);
-    } else if (isRepeat) {
-      setCurrentTrackIndex(0);
-    }
-    setCurrentTime(0);
-    setIsPlaying(true);
-  }, [isShuffle, currentTrackIndex, queue.length, isRepeat, playRandomTrack]);
+  const handleNext = useCallback(
+    ({ fromEnded = false }: { fromEnded?: boolean } = {}) => {
+      if (queue.length === 0) {
+        setIsPlaying(false);
+        return;
+      }
+
+      if (isShuffle) {
+        playRandomTrack();
+        setCurrentTime(0);
+        setIsPlaying(true);
+        return;
+      }
+
+      const isLastTrack = currentTrackIndex >= queue.length - 1;
+
+      if (!isLastTrack) {
+        setCurrentTrackIndex(currentTrackIndex + 1);
+        setCurrentTime(0);
+        setIsPlaying(true);
+        return;
+      }
+
+      if (repeatMode === 'queue') {
+        setCurrentTrackIndex(0);
+        setCurrentTime(0);
+        setIsPlaying(true);
+        return;
+      }
+
+      if (fromEnded) {
+        setIsPlaying(false);
+      }
+    },
+    [currentTrackIndex, isShuffle, playRandomTrack, queue.length, repeatMode],
+  );
 
   useEffect(() => {
     if (!audioRef.current || !queue[currentTrackIndex]) return;
@@ -155,14 +191,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       currentTrackIndex,
       volume,
       isShuffle,
-      isRepeat,
+      repeatMode,
       setTrack,
       setCurrentTime,
       setIsPlaying,
       setQueue,
       setCurrentTrackIndex,
       setIsShuffle,
-      setIsRepeat,
+      setRepeatMode,
+      cycleRepeatMode,
       handleSeek,
       togglePlayPause,
       toggleMute,
@@ -178,13 +215,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       currentTrackIndex,
       volume,
       isShuffle,
-      isRepeat,
+      repeatMode,
       handlePrevious,
       handleNext,
       togglePlayPause,
       toggleMute,
       handleVolumeChange,
       handleSeek,
+      cycleRepeatMode,
     ],
   );
 

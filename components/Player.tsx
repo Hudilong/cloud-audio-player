@@ -20,7 +20,7 @@ export default function Player() {
   const {
     audioRef,
     track,
-    isRepeat,
+    repeatMode,
     setCurrentTime,
     setIsPlaying,
     handleNext,
@@ -65,11 +65,15 @@ export default function Player() {
               }
             }}
             onEnded={() => {
-              if (isRepeat) {
+              if (repeatMode === 'track') {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                  audioRef.current.play().catch(() => {});
+                }
                 setCurrentTime(0);
                 setIsPlaying(true);
               } else {
-                handleNext();
+                handleNext({ fromEnded: true });
               }
             }}
             autoPlay

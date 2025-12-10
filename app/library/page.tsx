@@ -105,6 +105,9 @@ export default function Library(): JSX.Element {
   }
 
   const {
+    track: currentTrack,
+    queue,
+    currentTrackIndex,
     setTrack,
     setCurrentTime,
     setIsPlaying,
@@ -142,11 +145,11 @@ export default function Library(): JSX.Element {
     setQueue((prevQueue) => {
       if (prevQueue.length === 0) return [selectedTrack];
       const currentPlayingIndex = 0;
-      const currentTrack = prevQueue[currentPlayingIndex];
+      const nowPlaying = prevQueue[currentPlayingIndex];
       const remaining = prevQueue
         .slice(currentPlayingIndex + 1)
         .filter((track) => track.id !== selectedTrack.id);
-      return [currentTrack, selectedTrack, ...remaining];
+      return [nowPlaying, selectedTrack, ...remaining];
     });
   };
 
@@ -186,24 +189,71 @@ export default function Library(): JSX.Element {
       const res = await fetch(`/api/tracks/delete-url?id=${selectedTrack.id}`);
       const { deleteURL, error } = await res.json();
 
-      if (error) throw new Error(error);
+      if (!res.ok || error || !deleteURL) {
+        throw new Error(error || 'Failed to prepare track deletion.');
+      }
 
       const deleteResponse = await fetch(deleteURL, {
         method: 'DELETE',
       });
 
-      if (!deleteResponse.ok) throw new Error('Failed to delete file');
+      if (!deleteResponse.ok)
+        throw new Error('Failed to delete the file from storage.');
 
-      await fetch(`/api/tracks/${selectedTrack.id}`, {
-        method: 'DELETE',
-      });
+      const deleteTrackResponse = await fetch(
+        `/api/tracks/${selectedTrack.id}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      const deleteTrackData = await deleteTrackResponse.json();
+
+      if (!deleteTrackResponse.ok) {
+        throw new Error(
+          deleteTrackData.error || 'Failed to delete track record.',
+        );
+      }
 
       setLibrary((prevLibrary) =>
         prevLibrary.filter((item) => item.id !== selectedTrack.id),
       );
       removeTrackFromPlaylists(selectedTrack.id);
-    } catch {
-      setErrordisplay('Failed to delete the track. Please try again.');
+      setErrordisplay(null);
+
+      const removedIndex = queue.findIndex(
+        (item) => item.id === selectedTrack.id,
+      );
+      const filteredQueue = queue.filter(
+        (item) => item.id !== selectedTrack.id,
+      );
+
+      if (removedIndex !== -1) {
+        setQueue(filteredQueue);
+
+        if (currentTrack?.id === selectedTrack.id) {
+          if (filteredQueue.length === 0) {
+            setTrack(null);
+            setIsPlaying(false);
+            setCurrentTime(0);
+            setCurrentTrackIndex(0);
+          } else {
+            const nextIndex = Math.min(removedIndex, filteredQueue.length - 1);
+            setTrack(filteredQueue[nextIndex]);
+            setCurrentTrackIndex(nextIndex);
+            setCurrentTime(0);
+            setIsPlaying(false);
+          }
+        } else if (removedIndex < currentTrackIndex) {
+          setCurrentTrackIndex((prev) => Math.max(prev - 1, 0));
+        }
+      }
+    } catch (deleteError) {
+      setErrordisplay(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Failed to delete the track. Please try again.',
+      );
     }
   };
 

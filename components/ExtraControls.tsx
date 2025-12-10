@@ -15,9 +15,16 @@ function ExtraControls() {
     handleVolumeChange,
     isShuffle,
     setIsShuffle,
-    isRepeat,
-    setIsRepeat,
+    repeatMode,
+    cycleRepeatMode,
   } = playerContext;
+
+  const repeatLabelMap: Record<typeof repeatMode, string> = {
+    off: 'Repeat off',
+    queue: 'Repeat queue',
+    track: 'Repeat track',
+  };
+  const repeatLabel = repeatLabelMap[repeatMode];
 
   return (
     <div className="flex items-center gap-3 sm:gap-4 relative text-ink/70 dark:text-textDark">
@@ -34,13 +41,26 @@ function ExtraControls() {
 
       <button
         type="button"
-        onClick={() => setIsRepeat(!isRepeat)}
+        onClick={cycleRepeatMode}
         className={`p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors ${
-          isRepeat ? 'text-accentDark' : ''
+          repeatMode !== 'off' ? 'text-accentDark' : ''
         }`}
-        aria-label="Repeat"
+        aria-label={repeatLabel}
+        title={repeatLabel}
       >
-        <FiRepeat className="h-5 w-5" />
+        <span className="relative inline-flex">
+          <FiRepeat className="h-5 w-5" />
+          {repeatMode === 'queue' && (
+            <span className="absolute -right-1 -top-1 text-[10px] font-semibold">
+              A
+            </span>
+          )}
+          {repeatMode === 'track' && (
+            <span className="absolute -right-1 -top-1 text-[10px] font-semibold">
+              1
+            </span>
+          )}
+        </span>
       </button>
 
       <Popover className="relative">
