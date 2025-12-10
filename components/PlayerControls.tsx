@@ -12,6 +12,8 @@ function PlayerControls() {
   const { isPlaying, handleNext, handlePrevious, togglePlayPause } =
     playerContext;
 
+  const handleNextClick = () => handleNext();
+
   return (
     <div className="flex items-center gap-3 sm:gap-4 text-ink/70 dark:text-textDark">
       <button
@@ -38,7 +40,7 @@ function PlayerControls() {
 
       <button
         type="button"
-        onClick={handleNext}
+        onClick={handleNextClick}
         className="p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors"
         aria-label="Next"
       >
