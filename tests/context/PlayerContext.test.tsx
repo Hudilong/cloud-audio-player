@@ -90,7 +90,7 @@ describe('PlayerContext', () => {
 
     act(() => {
       result.current.setCurrentTrackIndex(0);
-      result.current.setIsRepeat(true);
+      result.current.setRepeatMode('queue');
     });
 
     act(() => {
@@ -100,5 +100,69 @@ describe('PlayerContext', () => {
     expect(result.current.currentTrackIndex).toBe(1);
     expect(result.current.isPlaying).toBe(true);
     expect(result.current.currentTime).toBe(0);
+  });
+
+  it('cycles repeat modes through off -> queue -> track -> off', () => {
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      result.current.cycleRepeatMode();
+    });
+    expect(result.current.repeatMode).toBe('queue');
+
+    act(() => {
+      result.current.cycleRepeatMode();
+    });
+    expect(result.current.repeatMode).toBe('track');
+
+    act(() => {
+      result.current.cycleRepeatMode();
+    });
+    expect(result.current.repeatMode).toBe('off');
+  });
+
+  it('wraps to start when repeat queue is enabled on next()', () => {
+    const trackA = buildTrack({ id: 'a' });
+    const trackB = buildTrack({ id: 'b' });
+
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      result.current.setQueue([trackA, trackB]);
+      result.current.setCurrentTrackIndex(1);
+      result.current.setRepeatMode('queue');
+    });
+
+    act(() => {
+      result.current.handleNext();
+    });
+
+    expect(result.current.currentTrackIndex).toBe(0);
+    expect(result.current.isPlaying).toBe(true);
+    expect(result.current.currentTime).toBe(0);
+  });
+
+  it('stops playback at end when repeat is off and next is triggered from ended', () => {
+    const trackA = buildTrack({ id: 'a' });
+    const trackB = buildTrack({ id: 'b' });
+
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      result.current.setQueue([trackA, trackB]);
+      result.current.setCurrentTrackIndex(1);
+      result.current.setRepeatMode('off');
+      result.current.setIsPlaying(true);
+      result.current.handleNext({ fromEnded: true });
+    });
+
+    expect(result.current.currentTrackIndex).toBe(1);
+    expect(result.current.isPlaying).toBe(false);
   });
 });

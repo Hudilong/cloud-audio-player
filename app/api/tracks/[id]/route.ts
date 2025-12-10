@@ -136,8 +136,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
-    await prisma.track.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      await tx.playlistTrack.deleteMany({
+        where: { trackId: id },
+      });
+
+      await tx.track.delete({
+        where: { id },
+      });
     });
 
     return NextResponse.json(
