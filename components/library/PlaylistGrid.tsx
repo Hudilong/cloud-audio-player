@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { FiPlus } from 'react-icons/fi';
 import { PlaylistWithTracks } from '../../types/playlist';
+import { getCoverProps } from '../../utils/getCoverSrc';
 
 interface PlaylistGridProps {
   playlists: PlaylistWithTracks[];
@@ -40,8 +41,10 @@ export default function PlaylistGrid({
         const orderedTracks = [...playlist.playlistTracks].sort(
           (a, b) => a.position - b.position,
         );
-        const coverImage =
-          orderedTracks[0]?.track.imageURL || '/default-thumbnail.png';
+        const cover = getCoverProps(
+          (orderedTracks[0]?.track as any)?.imageURL || null,
+          (orderedTracks[0]?.track as any)?.imageBlurhash || null,
+        );
         const trackCount = orderedTracks.length;
 
         return (
@@ -59,10 +62,12 @@ export default function PlaylistGrid({
           >
             <div className="relative overflow-hidden rounded-xl border border-borderLight dark:border-borderDark h-32 bg-panelLightAlt dark:bg-panelDarkAlt">
               <Image
-                src={coverImage}
+                src={cover.src}
                 alt={`${playlist.name} cover`}
                 fill
                 className="object-cover"
+                placeholder={cover.placeholder as any}
+                blurDataURL={cover.blurDataURL}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent" />
               <div className="absolute bottom-2 left-2 text-xs font-semibold px-3 py-1 rounded-full bg-panelLight dark:bg-panelDark text-ink dark:text-textDark">

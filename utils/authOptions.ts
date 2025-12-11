@@ -5,6 +5,7 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcrypt';
 import prisma from './prisma';
 import { SafeUser } from '../types';
+import { seedDemoTracksForUser } from './demoTracks';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -142,6 +143,16 @@ export const authOptions: NextAuthOptions = {
       }
       // For sign-in, redirect to `/library`
       return `${baseUrl}/library`;
+    },
+  },
+  events: {
+    createUser: async ({ user }) => {
+      if (!user.id) return;
+      try {
+        await seedDemoTracksForUser(user.id);
+      } catch {
+        // ignore seeding failures to avoid blocking sign-up
+      }
     },
   },
   pages: {

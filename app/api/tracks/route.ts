@@ -10,7 +10,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { title, artist, album, duration, s3Key, genre } = await request.json();
+  const {
+    title,
+    artist,
+    album,
+    duration,
+    s3Key,
+    genre,
+    imageURL,
+    imageBlurhash,
+  } =
+    await request.json();
 
   if (!title || !artist || !duration || !s3Key || !genre) {
     return NextResponse.json(
@@ -38,6 +48,8 @@ export async function POST(request: NextRequest) {
         genre,
         duration, // Duration in seconds
         s3Key,
+        imageURL: imageURL || null,
+        imageBlurhash: imageBlurhash || null,
         userId: user.id,
       },
     });

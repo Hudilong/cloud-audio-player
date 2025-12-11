@@ -11,6 +11,7 @@ import React, {
   SetStateAction,
 } from 'react';
 import { Track } from '@prisma/client';
+import { debounce } from '@utils/debounce';
 
 interface PlayerContextProps {
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -36,6 +37,9 @@ interface PlayerContextProps {
   handleSeek: (time: number) => void;
   handlePrevious: () => void;
   handleNext: (options?: { fromEnded?: boolean }) => void;
+  reorderUpcoming: (trackIds: string[]) => void;
+  removeUpcoming: (trackId: string) => void;
+  clearUpcoming: () => void;
 }
 
 export const PlayerContext = createContext<PlayerContextProps | undefined>(
@@ -55,16 +59,104 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [repeatMode, setRepeatMode] = useState<'off' | 'queue' | 'track'>(
     'off',
   );
+  const playbackSnapshotRef = useRef<{
+    track: Track | null;
+    currentTime: number;
+    isPlaying: boolean;
+    queue: Track[];
+    currentTrackIndex: number;
+    volume: number;
+    isShuffle: boolean;
+    repeatMode: 'off' | 'queue' | 'track';
+  }>({
+    track: null,
+    currentTime: 0,
+    isPlaying: false,
+    queue: [],
+    currentTrackIndex: 0,
+    volume: 1,
+    isShuffle: false,
+    repeatMode: 'off',
+  });
+  const isDirtyRef = useRef(false);
+
+  useEffect(() => {
+    playbackSnapshotRef.current = {
+      track,
+      currentTime,
+      isPlaying,
+      queue,
+      currentTrackIndex,
+      volume,
+      isShuffle,
+      repeatMode,
+    };
+    isDirtyRef.current = true;
+  }, [
+    track,
+    currentTime,
+    isPlaying,
+    queue,
+    currentTrackIndex,
+    volume,
+    isShuffle,
+    repeatMode,
+  ]);
+
+  const persistPlayback = useCallback(async () => {
+    const snapshot = playbackSnapshotRef.current;
+    if (!snapshot.track) return;
+    if (!isDirtyRef.current) return;
+    try {
+      await fetch('/api/playback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackId: snapshot.track.id,
+          position: snapshot.currentTime,
+          isPlaying: snapshot.isPlaying,
+          volume: snapshot.volume,
+          isShuffle: snapshot.isShuffle,
+          repeatMode: snapshot.repeatMode,
+          currentTrackIndex: snapshot.currentTrackIndex,
+          queueTrackIds: snapshot.queue.map((item) => item.id),
+        }),
+      });
+      isDirtyRef.current = false;
+    } catch {
+      // Ignore persistence errors to avoid interrupting playback.
+    }
+  }, []);
+
+  const debouncedPersist = useMemo(
+    () => debounce(persistPlayback, 400),
+    [persistPlayback],
+  );
+
+  useEffect(() => {
+    if (!isPlaying) {
+      return () => {};
+    }
+
+    const interval = window.setInterval(() => {
+      persistPlayback();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [isPlaying, persistPlayback]);
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
+      persistPlayback();
     } else {
       audioRef.current.play().catch(() => {});
     }
     setIsPlaying(!isPlaying);
-  }, [audioRef, isPlaying]);
+  }, [audioRef, isPlaying, persistPlayback]);
 
   const toggleMute = useCallback(() => {
     if (!audioRef.current) return;
@@ -72,11 +164,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsMuted(!isMuted);
   }, [audioRef, isMuted]);
 
-  const handleSeek = useCallback((time: number) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = time;
-    setCurrentTime(time);
-  }, []);
+  const handleSeek = useCallback(
+    (time: number) => {
+      if (!audioRef.current) return;
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+      debouncedPersist();
+    },
+    [debouncedPersist],
+  );
 
   const handleVolumeChange = useCallback((newVolume: number) => {
     setVolume(newVolume);
@@ -117,7 +213,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     setCurrentTime(0);
     setIsPlaying(true);
-  }, [isShuffle, currentTrackIndex, repeatMode, queue.length, playRandomTrack]);
+    persistPlayback();
+  }, [
+    isShuffle,
+    currentTrackIndex,
+    repeatMode,
+    queue.length,
+    playRandomTrack,
+    persistPlayback,
+  ]);
 
   const handleNext = useCallback(
     ({ fromEnded = false }: { fromEnded?: boolean } = {}) => {
@@ -139,6 +243,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setCurrentTrackIndex(currentTrackIndex + 1);
         setCurrentTime(0);
         setIsPlaying(true);
+        persistPlayback();
         return;
       }
 
@@ -146,6 +251,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setCurrentTrackIndex(0);
         setCurrentTime(0);
         setIsPlaying(true);
+        persistPlayback();
         return;
       }
 
@@ -153,8 +259,46 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setIsPlaying(false);
       }
     },
-    [currentTrackIndex, isShuffle, playRandomTrack, queue.length, repeatMode],
+    [
+      currentTrackIndex,
+      isShuffle,
+      playRandomTrack,
+      queue.length,
+      repeatMode,
+      persistPlayback,
+    ],
   );
+
+  const reorderUpcoming = useCallback(
+    (trackIds: string[]) => {
+      const prefix = queue.slice(0, currentTrackIndex + 1);
+      const trackMap = new Map(queue.map((t) => [t.id, t]));
+      const reordered = trackIds
+        .map((id) => trackMap.get(id))
+        .filter(Boolean) as Track[];
+      setQueue([...prefix, ...reordered]);
+      isDirtyRef.current = true;
+    },
+    [currentTrackIndex, queue],
+  );
+
+  const removeUpcoming = useCallback(
+    (trackId: string) => {
+      const newQueue = queue.filter(
+        (track, index) =>
+          !(index > currentTrackIndex && track.id === trackId),
+      );
+      setQueue(newQueue);
+      isDirtyRef.current = true;
+    },
+    [currentTrackIndex, queue],
+  );
+
+  const clearUpcoming = useCallback(() => {
+    const newQueue = queue.slice(0, currentTrackIndex + 1);
+    setQueue(newQueue);
+    isDirtyRef.current = true;
+  }, [currentTrackIndex, queue]);
 
   useEffect(() => {
     if (!audioRef.current || !queue[currentTrackIndex]) return;
@@ -174,12 +318,58 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const handlePause = () => {
+      persistPlayback();
+    };
+
     audioPlayer?.addEventListener('timeupdate', updateTime);
+    audioPlayer?.addEventListener('pause', handlePause);
 
     return () => {
       audioPlayer?.removeEventListener('timeupdate', updateTime);
+      audioPlayer?.removeEventListener('pause', handlePause);
+      persistPlayback();
     };
+  }, [persistPlayback]);
+
+  useEffect(() => {
+    const fetchPlayback = async () => {
+      try {
+        const res = await fetch('/api/playback');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.track && !data.trackId) return;
+
+        const restoredQueue: Track[] = data.queue || [];
+        setQueue(restoredQueue);
+
+        const fallbackTrack =
+          restoredQueue[data.currentTrackIndex] || data.track || null;
+
+        setTrack(fallbackTrack);
+        setCurrentTrackIndex(data.currentTrackIndex || 0);
+        setCurrentTime(data.position || 0);
+        setIsPlaying(Boolean(data.isPlaying));
+        setVolume(typeof data.volume === 'number' ? data.volume : 1);
+        setIsShuffle(Boolean(data.isShuffle));
+        setRepeatMode(
+          data.repeatMode === 'queue' || data.repeatMode === 'track'
+            ? data.repeatMode
+            : 'off',
+        );
+      } catch {
+        // Ignore hydrate failures to keep the player usable.
+      }
+    };
+
+    fetchPlayback();
   }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   const value = useMemo(
     () => ({
@@ -206,6 +396,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       handleVolumeChange,
       handlePrevious,
       handleNext,
+      reorderUpcoming,
+      removeUpcoming,
+      clearUpcoming,
     }),
     [
       track,
@@ -223,6 +416,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       handleVolumeChange,
       handleSeek,
       cycleRepeatMode,
+      reorderUpcoming,
+      removeUpcoming,
+      clearUpcoming,
     ],
   );
 

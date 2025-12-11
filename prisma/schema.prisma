@@ -69,6 +69,7 @@ model Track {
   album          String?
   genre          String?
   imageURL       String?
+  imageBlurhash  String?
   duration       Int // Duration in seconds
   s3Key          String
   userId         String
@@ -88,6 +89,7 @@ model PlaybackState {
   volume            Float    @default(1.0)
   shuffle           Boolean  @default(false)
   repeat            Boolean  @default(false)
+  repeatMode        String   @default("off")
   currentTrackIndex Int      @default(0)
   tracks            Json     @default("[]")
   updatedAt         DateTime @updatedAt

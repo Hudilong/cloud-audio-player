@@ -21,6 +21,9 @@ export function usePlaylistManager(status: SessionStatus) {
   const [playlistError, setPlaylistError] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState('');
   const [trackToAdd, setTrackToAdd] = useState<Track | null>(null);
+  const [reorderingPlaylistId, setReorderingPlaylistId] = useState<
+    string | null
+  >(null);
 
   const fetchPlaylists = useCallback(async () => {
     try {
@@ -175,6 +178,49 @@ export function usePlaylistManager(status: SessionStatus) {
     }
   }, []);
 
+  const reorderPlaylistTracks = useCallback(
+    async (playlistId: string, orderedTrackIds: string[]) => {
+      setReorderingPlaylistId(playlistId);
+      try {
+        const items = orderedTrackIds.map((trackId, index) => ({
+          trackId,
+          position: (index + 1) * 100,
+        }));
+
+        const res = await fetch(`/api/playlists/${playlistId}/reorder`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to reorder playlist.');
+        }
+
+        if (data.playlist) {
+          setPlaylists((prev) =>
+            prev.map((playlist) =>
+              playlist.id === data.playlist.id ? data.playlist : playlist,
+            ),
+          );
+        }
+
+        return true;
+      } catch (error) {
+        setPlaylistError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to reorder playlist.',
+        );
+        return false;
+      } finally {
+        setReorderingPlaylistId(null);
+      }
+    },
+    [],
+  );
+
   const removeTrackFromPlaylists = useCallback((trackId: string) => {
     setPlaylists((prev) =>
       prev.map((playlist) => ({
@@ -205,10 +251,12 @@ export function usePlaylistManager(status: SessionStatus) {
     fetchPlaylists,
     getPlaylistTracks,
     addTrackToPlaylist,
+    reorderPlaylistTracks,
     createPlaylist,
     deletePlaylist,
     removeTrackFromPlaylists,
     defaultPlaylistFilter,
     setPlaylistError,
+    reorderingPlaylistId,
   };
 }

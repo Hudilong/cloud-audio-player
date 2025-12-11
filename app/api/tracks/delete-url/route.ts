@@ -37,6 +37,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
   }
 
+  const coverKey = audio.imageURL && !audio.imageURL.startsWith('http')
+    ? audio.imageURL
+    : null;
+
+  const buildCoverKeys = (key: string) => {
+    const keys = new Set<string>();
+    keys.add(key);
+
+    const parts = key.split('/');
+    parts.pop();
+    const baseDir = parts.join('/');
+    if (!baseDir) return Array.from(keys);
+
+    keys.add(`${baseDir}/large.webp`);
+    keys.add(`${baseDir}/thumb.webp`);
+    keys.add(`${baseDir}/original.jpg`);
+    keys.add(`${baseDir}/original.png`);
+    keys.add(`${baseDir}/original.webp`);
+
+    return Array.from(keys);
+  };
+
   try {
     const command = new DeleteObjectCommand({
       Bucket: process.env.BUCKET_NAME!,
@@ -45,7 +67,22 @@ export async function GET(request: NextRequest) {
 
     const deleteURL = await getSignedUrl(s3, command, { expiresIn: 60 });
 
-    return NextResponse.json({ deleteURL }, { status: 200 });
+    let coverDeleteURLs: string[] = [];
+
+    if (coverKey) {
+      const coverKeys = buildCoverKeys(coverKey);
+      coverDeleteURLs = await Promise.all(
+        coverKeys.map(async (key) => {
+          const coverCommand = new DeleteObjectCommand({
+            Bucket: process.env.BUCKET_NAME!,
+            Key: key,
+          });
+          return getSignedUrl(s3, coverCommand, { expiresIn: 60 });
+        }),
+      );
+    }
+
+    return NextResponse.json({ deleteURL, coverDeleteURLs }, { status: 200 });
   } catch {
     return NextResponse.json(
       { error: 'Error generating pre-signed URL' },

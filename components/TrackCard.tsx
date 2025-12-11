@@ -6,6 +6,7 @@ import { Track } from '@prisma/client';
 import { formatTime } from '../utils/formatTime';
 import ContextualMenu from './ContextualMenu';
 import { Item } from '../types/item';
+import { getCoverProps } from '../utils/getCoverSrc';
 
 interface TrackCardProps {
   track: Track;
@@ -55,13 +56,23 @@ export default function TrackCard({
           }
         }}
       >
-        <Image
-          width={176}
-          height={176}
-          src={track.imageURL || '/default-thumbnail.png'}
-          alt={track.title || 'thumbnail'}
-          className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {(() => {
+          const cover = getCoverProps(
+            (track as any).imageURL,
+            (track as any).imageBlurhash,
+          );
+          return (
+            <Image
+              width={176}
+              height={176}
+              src={cover.src}
+              alt={track.title || 'thumbnail'}
+              placeholder={cover.placeholder as any}
+              blurDataURL={cover.blurDataURL}
+              className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          );
+        })()}
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-ink/70 via-ink/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-ink text-sm font-semibold shadow-soft">
             Play now

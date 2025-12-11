@@ -8,6 +8,8 @@ import TrackInfoDisplay from './TrackInfoDisplay';
 import PlayerControls from './PlayerControls';
 import ExtraControls from './ExtraControls';
 import ProgressBar from './ProgressBar';
+import { getCoverProps } from '../utils/getCoverSrc';
+import QueueDrawer from './QueueDrawer';
 
 export default function Player() {
   const playerContext = useContext(PlayerContext);
@@ -24,6 +26,13 @@ export default function Player() {
     setCurrentTime,
     setIsPlaying,
     handleNext,
+    currentTime,
+    isPlaying,
+    queue,
+    currentTrackIndex,
+    reorderUpcoming,
+    removeUpcoming,
+    clearUpcoming,
   } = playerContext;
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -43,8 +52,44 @@ export default function Player() {
   }, [track]);
 
   useEffect(() => {
-    audioRef.current?.play();
-  }, [streamURL, audioRef]);
+    if (isPlaying) {
+      audioRef.current?.play();
+    }
+  }, [streamURL, audioRef, isPlaying]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isEditable =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (isEditable) return;
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        playerContext.togglePlayPause();
+      } else if (
+        (event.metaKey || event.ctrlKey) &&
+        (event.key === 'ArrowUp' || event.key === 'ArrowLeft')
+      ) {
+        event.preventDefault();
+        playerContext.handlePrevious();
+      } else if (
+        (event.metaKey || event.ctrlKey) &&
+        (event.key === 'ArrowDown' || event.key === 'ArrowRight')
+      ) {
+        event.preventDefault();
+        playerContext.handleNext();
+      }
+    };
+
+    document.addEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+    };
+  }, [playerContext]);
 
   return (
     track &&
@@ -64,6 +109,15 @@ export default function Player() {
                 setCurrentTime(audioRef.current.currentTime);
               }
             }}
+            onLoadedMetadata={() => {
+              if (!audioRef.current) return;
+              if (currentTime > 0) {
+                audioRef.current.currentTime = currentTime;
+              }
+              if (isPlaying) {
+                audioRef.current.play().catch(() => {});
+              }
+            }}
             onEnded={() => {
               if (repeatMode === 'track') {
                 if (audioRef.current) {
@@ -81,13 +135,23 @@ export default function Player() {
 
           {isCollapsed ? (
             <div className="relative flex items-center gap-2 sm:gap-3">
-              <Image
-                width={48}
-                height={48}
-                src={track.imageURL || '/default-thumbnail.png'}
-                alt={track.title || 'track'}
-                className="rounded-2xl w-10 h-10 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
-              />
+              {(() => {
+                const cover = getCoverProps(
+                  (track as any).imageURL,
+                  (track as any).imageBlurhash,
+                );
+                return (
+                  <Image
+                    width={48}
+                    height={48}
+                    src={cover.src}
+                    alt={track.title || 'track'}
+                    placeholder={cover.placeholder as any}
+                    blurDataURL={cover.blurDataURL}
+                    className="rounded-2xl w-10 h-10 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
+                  />
+                );
+              })()}
               <div className="flex-1 min-w-0">
                 <TrackInfoDisplay />
               </div>
@@ -106,13 +170,23 @@ export default function Player() {
           ) : (
             <div className="relative flex flex-col gap-2 sm:gap-3">
               <div className="flex items-center gap-2.5 sm:gap-3.5">
-                <Image
-                  width={56}
-                  height={56}
-                  src={track.imageURL || '/default-thumbnail.png'}
-                  alt={track.title || 'track'}
-                  className="rounded-2xl w-10 h-10 sm:w-12 sm:h-12 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
-                />
+                {(() => {
+                  const cover = getCoverProps(
+                    (track as any).imageURL,
+                    (track as any).imageBlurhash,
+                  );
+                  return (
+                    <Image
+                      width={56}
+                      height={56}
+                      src={cover.src}
+                      alt={track.title || 'track'}
+                      placeholder={cover.placeholder as any}
+                      blurDataURL={cover.blurDataURL}
+                      className="rounded-2xl w-10 h-10 sm:w-12 sm:h-12 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
+                    />
+                  );
+                })()}
                 <TrackInfoDisplay />
                 <div className="hidden sm:flex ml-auto">
                   <ExtraControls />
@@ -129,8 +203,17 @@ export default function Player() {
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
                 <PlayerControls />
-                <div className="sm:hidden">
-                  <ExtraControls />
+                <div className="flex items-center gap-3">
+                  <QueueDrawer
+                    queue={queue}
+                    currentTrackIndex={currentTrackIndex}
+                    onReorder={reorderUpcoming}
+                    onRemove={removeUpcoming}
+                    onClear={clearUpcoming}
+                  />
+                  <div className="sm:hidden">
+                    <ExtraControls />
+                  </div>
                 </div>
               </div>
 
