@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { getServerSession } from 'next-auth';
 import localFont from 'next/font/local';
 import './globals.css';
 import { Inter, Poppins, Space_Grotesk } from 'next/font/google';
-import { getServerSession } from 'next-auth';
+import MainContent from '@components/layout/MainContent';
 import Navbar from '@components/layout/Navbar';
 import Player from '@components/player/Player';
-import MainContent from '@components/layout/MainContent';
+import { authOptions } from '@utils/authOptions';
 import SessionProvider from './context/SessionProvider';
 import { PlayerProvider } from './context/PlayerContext';
 
@@ -50,14 +51,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   return (
     <html
       lang="en"
       className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable}`}
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col text-textLight dark:text-textDark`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col text-textLight dark:text-textDark scrollbar-soft`}
       >
         <SessionProvider session={session}>
           {/* Fixed Header */}

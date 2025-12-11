@@ -27,29 +27,36 @@ export const buildTrack = (overrides: Partial<Track> = {}): Track => {
 
 export const createMockPlayerContext = (
   overrides: Partial<PlayerContextValue> = {},
-): PlayerContextValue => ({
-  audioRef: createRef<HTMLAudioElement>(),
-  track: null,
-  currentTime: 0,
-  isPlaying: false,
-  queue: [],
-  currentTrackIndex: 0,
-  volume: 1,
-  isShuffle: false,
-  repeatMode: 'off',
-  setTrack: () => {},
-  setCurrentTime: () => {},
-  togglePlayPause: () => {},
-  setIsPlaying: () => {},
-  setQueue: () => {},
-  setCurrentTrackIndex: () => {},
-  handleVolumeChange: () => {},
-  toggleMute: () => {},
-  setIsShuffle: () => {},
-  setRepeatMode: () => {},
-  cycleRepeatMode: () => {},
-  handleSeek: () => {},
-  handlePrevious: () => {},
-  handleNext: () => {},
-  ...overrides,
-});
+): PlayerContextValue => {
+  const audioRef = overrides.audioRef || createRef<HTMLAudioElement>();
+
+  return {
+    audioRef,
+    track: null,
+    currentTime: 0,
+    isPlaying: false,
+    queue: [],
+    currentTrackIndex: 0,
+    volume: 1,
+    isShuffle: false,
+    repeatMode: 'off',
+    setTrack: () => {},
+    setCurrentTime: () => {},
+    togglePlayPause: () => {},
+    setIsPlaying: () => {},
+    setQueue: () => {},
+    setCurrentTrackIndex: () => {},
+    handleVolumeChange: () => {},
+    toggleMute: () => {},
+    attemptPlay: () => {
+      audioRef.current?.play?.();
+    },
+    setIsShuffle: () => {},
+    setRepeatMode: () => {},
+    cycleRepeatMode: () => {},
+    handleSeek: () => {},
+    handlePrevious: () => {},
+    handleNext: () => {},
+    ...overrides,
+  };
+};

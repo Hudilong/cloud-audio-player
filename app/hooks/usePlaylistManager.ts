@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import type { PlaylistWithTracks } from '../../types/playlist';
 
 type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -20,7 +20,7 @@ export function usePlaylistManager(status: SessionStatus) {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistError, setPlaylistError] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState('');
-  const [trackToAdd, setTrackToAdd] = useState<Track | null>(null);
+  const [trackToAdd, setTrackToAdd] = useState<LibraryTrack | null>(null);
   const [reorderingPlaylistId, setReorderingPlaylistId] = useState<
     string | null
   >(null);
@@ -53,12 +53,17 @@ export function usePlaylistManager(status: SessionStatus) {
       if (!playlist) return [];
       return [...playlist.playlistTracks]
         .sort((a, b) => a.position - b.position)
-        .map((item) => item.track);
+        .map((item) => ({
+          ...item.track,
+          kind: item.track.isFeatured
+            ? ('featured' as const)
+            : ('user' as const),
+        }));
     },
     [playlists],
   );
 
-  const openPlaylistModal = useCallback((selectedTrack: Track) => {
+  const openPlaylistModal = useCallback((selectedTrack: LibraryTrack) => {
     setTrackToAdd(selectedTrack);
     setPlaylistModalOpen(true);
     setPlaylistError(null);
@@ -179,11 +184,14 @@ export function usePlaylistManager(status: SessionStatus) {
   }, []);
 
   const reorderPlaylistTracks = useCallback(
-    async (playlistId: string, orderedTrackIds: string[]) => {
+    async (
+      playlistId: string,
+      orderedTracks: Array<{ id: string; kind: 'user' | 'featured' }>,
+    ) => {
       setReorderingPlaylistId(playlistId);
       try {
-        const items = orderedTrackIds.map((trackId, index) => ({
-          trackId,
+        const items = orderedTracks.map((entry, index) => ({
+          trackId: entry.id,
           position: (index + 1) * 100,
         }));
 
@@ -226,7 +234,7 @@ export function usePlaylistManager(status: SessionStatus) {
       prev.map((playlist) => ({
         ...playlist,
         playlistTracks: playlist.playlistTracks.filter(
-          (pt) => pt.track.id !== trackId,
+          (pt) => pt.track?.id !== trackId,
         ),
       })),
     );

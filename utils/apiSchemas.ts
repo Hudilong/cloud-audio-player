@@ -16,12 +16,21 @@ export const trackUpdateSchema = trackBaseSchema;
 
 export const playbackUpdateSchema = z.object({
   trackId: z.string().min(1),
+  trackKind: z.enum(['user', 'featured']).optional(),
   position: z.number().nonnegative(),
   isPlaying: z.boolean().optional(),
   volume: z.number().min(0).max(1).optional(),
   isShuffle: z.boolean().optional(),
   repeatMode: z.enum(['off', 'queue', 'track']).optional(),
   currentTrackIndex: z.number().int().nonnegative().optional(),
+  queue: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        kind: z.enum(['user', 'featured']),
+      }),
+    )
+    .optional(),
   queueTrackIds: z.array(z.string().min(1)).optional(),
 });
 
@@ -30,13 +39,20 @@ export const playlistReorderSchema = z.object({
     .array(
       z.object({
         trackId: z.string().min(1),
+        kind: z.enum(['user', 'featured']).optional(),
         position: z.number().int().optional(),
       }),
     )
     .min(1),
 });
 
+export const featuredAddSchema = z.object({
+  trackId: z.string().min(1),
+  position: z.number().int().optional(),
+});
+
 export type TrackCreateBody = z.infer<typeof trackCreateSchema>;
 export type TrackUpdateBody = z.infer<typeof trackUpdateSchema>;
 export type PlaybackUpdateBody = z.infer<typeof playbackUpdateSchema>;
 export type PlaylistReorderBody = z.infer<typeof playlistReorderSchema>;
+export type FeaturedAddBody = z.infer<typeof featuredAddSchema>;

@@ -4,20 +4,25 @@ import { HttpError, badRequest, notFound } from '@utils/httpError';
 const TEMP_POSITION_OFFSET = 100000;
 const GAP = 100;
 
-export type ReorderItem = { trackId: string; position?: number };
+export type ReorderItem = {
+  trackId: string;
+  position?: number;
+};
 
 export async function reorderPlaylistForUser(
   userId: string,
   playlistId: string,
   items: ReorderItem[],
 ) {
-  const orderedTrackIds = items.map((item) => item.trackId);
-
   const playlist = await prisma.playlist.findFirst({
     where: { id: playlistId, userId },
     include: {
       playlistTracks: {
-        select: { id: true, trackId: true, position: true },
+        select: {
+          id: true,
+          trackId: true,
+          position: true,
+        },
       },
     },
   });
@@ -26,18 +31,19 @@ export async function reorderPlaylistForUser(
     throw notFound('Playlist not found');
   }
 
-  const existingTrackIds = playlist.playlistTracks.map((pt) => pt.trackId);
+  const existingIds = playlist.playlistTracks.map((pt) => pt.trackId);
+  const orderedIds = items.map((item) => item.trackId);
   const allPresent =
-    orderedTrackIds.length === existingTrackIds.length &&
-    orderedTrackIds.every((id) => existingTrackIds.includes(id));
+    orderedIds.length === existingIds.length &&
+    orderedIds.every((key) => existingIds.includes(key));
 
   if (!allPresent) {
     throw badRequest(
-      'items must include the same tracks currently in the playlist (trackId mismatch)',
+      'items must include the same tracks currently in the playlist (trackId/kind mismatch)',
     );
   }
 
-  const trackIdToPlaylistTrackId = playlist.playlistTracks.reduce(
+  const entryKeyToPlaylistTrackId = playlist.playlistTracks.reduce(
     (acc, pt) => {
       acc[pt.trackId] = pt.id;
       return acc;
@@ -45,32 +51,35 @@ export async function reorderPlaylistForUser(
     {} as Record<string, string>,
   );
 
-  const trackIdToPosition: Record<string, number> = {};
-  items.forEach((item, index) => {
+  const entryKeyToPosition: Record<string, number> = {};
+  orderedIds.forEach((id, index) => {
     const fromPayload =
-      typeof item.position === 'number' && !Number.isNaN(item.position)
-        ? item.position
+      typeof items[index]?.position === 'number' &&
+      !Number.isNaN(items[index]?.position as number)
+        ? (items[index]?.position as number)
         : null;
-    trackIdToPosition[item.trackId] =
+    entryKeyToPosition[id] =
       fromPayload !== null ? fromPayload : (index + 1) * GAP;
   });
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
       await Promise.all(
-        orderedTrackIds.map((trackId, index) =>
+        orderedIds.map((id, index) =>
           tx.playlistTrack.update({
-            where: { id: trackIdToPlaylistTrackId[trackId] },
+            where: { id: entryKeyToPlaylistTrackId[id] },
             data: { position: TEMP_POSITION_OFFSET + index },
           }),
         ),
       );
 
       await Promise.all(
-        orderedTrackIds.map((trackId, index) =>
+        orderedIds.map((id, index) =>
           tx.playlistTrack.update({
-            where: { id: trackIdToPlaylistTrackId[trackId] },
-            data: { position: trackIdToPosition[trackId] ?? (index + 1) * GAP },
+            where: { id: entryKeyToPlaylistTrackId[id] },
+            data: {
+              position: entryKeyToPosition[id] ?? (index + 1) * GAP,
+            },
           }),
         ),
       );

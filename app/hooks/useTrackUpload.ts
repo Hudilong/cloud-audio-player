@@ -8,6 +8,7 @@ import { readFileAsDataURL } from '../../utils/imageProcessing';
 
 interface UseTrackUploadOptions {
   onSuccess?: () => void;
+  saveEndpoint?: string;
 }
 
 const emptyTrackInfo: TrackInfo = {
@@ -21,6 +22,7 @@ const emptyTrackInfo: TrackInfo = {
 };
 
 export function useTrackUpload(options: UseTrackUploadOptions = {}) {
+  const { onSuccess, saveEndpoint = '/api/tracks' } = options;
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [trackInfo, setTrackInfo] = useState<TrackInfo>(emptyTrackInfo);
@@ -163,7 +165,7 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
           });
           if (!uploadResponse.ok) throw new Error('Failed to upload file');
 
-          const saveResponse = await fetch('/api/tracks', {
+          const saveResponse = await fetch(saveEndpoint, {
             method: 'POST',
             body: JSON.stringify({
               ...trackInfo,
@@ -176,7 +178,7 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
           if (!saveResponse.ok) throw new Error('Failed to save metadata');
 
           closeUploadModal();
-          options.onSuccess?.();
+          onSuccess?.();
         } catch (err) {
           if (err instanceof Error) {
             setUploadError(err.message);
@@ -195,7 +197,14 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
 
       reader.readAsDataURL(selectedFile);
     },
-    [closeUploadModal, coverFile, options, selectedFile, trackInfo],
+    [
+      closeUploadModal,
+      coverFile,
+      onSuccess,
+      saveEndpoint,
+      selectedFile,
+      trackInfo,
+    ],
   );
 
   return {

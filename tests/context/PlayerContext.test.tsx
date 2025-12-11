@@ -32,6 +32,31 @@ describe('PlayerContext', () => {
     expect(result.current.isPlaying).toBe(false);
   });
 
+  it('turns isPlaying back off when the browser blocks autoplay', async () => {
+    const play = vi
+      .fn()
+      .mockRejectedValue(new DOMException('Autoplay blocked', 'NotAllowedError'));
+    const pause = vi.fn();
+
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      const audioRef = result.current
+        .audioRef as React.MutableRefObject<HTMLAudioElement | null>;
+      audioRef.current = { play, pause } as unknown as HTMLAudioElement;
+    });
+
+    await act(async () => {
+      await result.current.togglePlayPause();
+      await Promise.resolve();
+    });
+
+    expect(play).toHaveBeenCalled();
+    expect(result.current.isPlaying).toBe(false);
+  });
+
   it('updates volume on both state and element', () => {
     const { result } = renderHook(() => React.useContext(PlayerContext)!, {
       wrapper: PlayerProvider,

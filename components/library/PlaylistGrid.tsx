@@ -35,15 +35,18 @@ export default function PlaylistGrid({
 }: PlaylistGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-      {playlists.length === 0 && <CreatePlaylistCard onCreate={onCreate} />}
+      <CreatePlaylistCard onCreate={onCreate} />
 
       {playlists.map((playlist) => {
         const orderedTracks = [...playlist.playlistTracks].sort(
           (a, b) => a.position - b.position,
         );
-        const firstTrack = orderedTracks[0]?.track as
-          | TrackWithCover
-          | undefined;
+        const firstTrack = orderedTracks[0]?.track
+          ? ({
+              ...orderedTracks[0].track,
+              kind: orderedTracks[0].track.isFeatured ? 'featured' : 'user',
+            } as TrackWithCover)
+          : undefined;
         const trackCount = orderedTracks.length;
 
         return (
@@ -107,8 +110,6 @@ export default function PlaylistGrid({
           </div>
         );
       })}
-
-      {playlists.length > 0 && <CreatePlaylistCard onCreate={onCreate} />}
     </div>
   );
 }

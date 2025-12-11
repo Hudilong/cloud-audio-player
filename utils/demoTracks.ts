@@ -17,21 +17,6 @@ const parseNumber = (value: string | undefined, fallback: number) => {
 };
 
 function parseDemoTracksFromEnv(): DemoTrackInput[] {
-  if (process.env.DEMO_TRACKS) {
-    try {
-      const parsed = JSON.parse(process.env.DEMO_TRACKS) as DemoTrackInput[];
-      return parsed.filter(
-        (item) =>
-          item &&
-          typeof item.title === 'string' &&
-          typeof item.artist === 'string' &&
-          typeof item.s3Key === 'string',
-      );
-    } catch {
-      // Ignore malformed JSON
-    }
-  }
-
   const track1Key = process.env.DEMO_TRACK_1_KEY;
   const track2Key = process.env.DEMO_TRACK_2_KEY;
   const track1: DemoTrackInput | null = track1Key

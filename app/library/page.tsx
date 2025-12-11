@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { PlayerContext } from '@/context/PlayerContext';
@@ -25,11 +26,15 @@ import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import { useTrackUpload } from '../hooks/useTrackUpload';
 
 export default function Library(): JSX.Element {
-  const { status } = useSession();
+  const { status, data: session } = useSession();
   const router = useRouter();
   const playerContext = useContext(PlayerContext);
-  const [library, setLibrary] = useState<Track[]>([]);
+  const isAdmin = status === 'authenticated' && session?.user?.role === 'ADMIN';
+  const [library, setLibrary] = useState<LibraryTrack[]>([]);
   const [errorDisplay, setErrordisplay] = useState<string | null>(null);
+  const [featuredTracks, setFeaturedTracks] = useState<LibraryTrack[]>([]);
+  const [featuredError, setFeaturedError] = useState<string | null>(null);
+  const [featuringTrackId, setFeaturingTrackId] = useState<string | null>(null);
 
   const {
     playlists,
@@ -67,11 +72,46 @@ export default function Library(): JSX.Element {
       }
 
       const data = await res.json();
-      setLibrary(data.tracks);
+      const normalized = (data.tracks || []).map(
+        (track: Track): LibraryTrack => ({
+          ...track,
+          isFeatured: Boolean((track as { isFeatured?: boolean }).isFeatured),
+          kind: (track as { isFeatured?: boolean }).isFeatured
+            ? 'featured'
+            : 'user',
+        }),
+      );
+      setLibrary(normalized);
       setErrordisplay(null);
     } catch (error) {
       setErrordisplay(
         error instanceof Error ? error.message : 'Something went wrong.',
+      );
+    }
+  }, []);
+
+  const fetchFeatured = useCallback(async () => {
+    try {
+      const res = await fetch('/api/default-tracks');
+      if (!res.ok) {
+        throw new Error('Failed to load featured tracks.');
+      }
+      const data = await res.json();
+      const normalized: LibraryTrack[] = (data.tracks || []).map(
+        (track: LibraryTrack) => ({
+          ...track,
+          kind: 'featured',
+          isFeatured: true,
+        }),
+      );
+      const ordered = [...normalized].sort(
+        (a, b) => (Number(a.order || 0) || 0) - (Number(b.order || 0) || 0),
+      );
+      setFeaturedTracks(ordered);
+      setFeaturedError(null);
+    } catch (err) {
+      setFeaturedError(
+        err instanceof Error ? err.message : 'Failed to load featured tracks.',
       );
     }
   }, []);
@@ -99,7 +139,7 @@ export default function Library(): JSX.Element {
     },
   });
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [editingTrack, setEditingTrack] = useState<LibraryTrack | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
     artist: '',
@@ -118,8 +158,16 @@ export default function Library(): JSX.Element {
   }, [status, router]);
 
   useEffect(() => {
-    fetchTracks();
-  }, [fetchTracks]);
+    if (status === 'authenticated') {
+      fetchTracks();
+    }
+  }, [fetchTracks, status]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchFeatured();
+    }
+  }, [fetchFeatured, status]);
 
   if (!playerContext) {
     throw new Error('Library must be used within a PlayerProvider');
@@ -144,7 +192,7 @@ export default function Library(): JSX.Element {
     [activePlaylistFilter.id, getPlaylistTracks, library],
   );
 
-  const handleTrackSelect = (selectedTrack: Track) => {
+  const handleTrackSelect = (selectedTrack: LibraryTrack) => {
     const sourceTracks = activePlaylistFilter.id
       ? getPlaylistTracks(activePlaylistFilter.id)
       : library;
@@ -152,17 +200,17 @@ export default function Library(): JSX.Element {
     const index = sourceTracks.findIndex(
       (track) => track.id === selectedTrack.id,
     );
-    setCurrentTrackIndex(index);
+    setCurrentTrackIndex(Math.max(index, 0));
     setTrack(selectedTrack);
     setCurrentTime(0);
     setIsPlaying(true);
   };
 
-  const handleAddTrackToQueue = (selectedTrack: Track) => {
+  const handleAddTrackToQueue = (selectedTrack: LibraryTrack) => {
     setQueue((prevQueue) => [...prevQueue, selectedTrack]);
   };
 
-  const handlePlayNext = (selectedTrack: Track) => {
+  const handlePlayNext = (selectedTrack: LibraryTrack) => {
     setQueue((prevQueue) => {
       if (prevQueue.length === 0) return [selectedTrack];
       const currentPlayingIndex = 0;
@@ -174,11 +222,93 @@ export default function Library(): JSX.Element {
     });
   };
 
-  const handleAddToPlaylist = (selectedTrack: Track) => {
+  const handleFeaturedSelect = (selectedTrack: LibraryTrack) => {
+    const sourceTracks = featuredTracks;
+    if (!sourceTracks.length) return;
+    setQueue(sourceTracks);
+    const index = sourceTracks.findIndex(
+      (track) => track.id === selectedTrack.id,
+    );
+    setCurrentTrackIndex(Math.max(index, 0));
+    setTrack(selectedTrack);
+    setCurrentTime(0);
+    setIsPlaying(true);
+  };
+
+  const handleFeaturedAddToQueue = (selectedTrack: LibraryTrack) => {
+    setQueue((prevQueue) => [...prevQueue, selectedTrack]);
+  };
+
+  const handleFeaturedPlayNext = (selectedTrack: LibraryTrack) => {
+    setQueue((prevQueue) => {
+      if (prevQueue.length === 0) return [selectedTrack];
+      const currentPlayingIndex = 0;
+      const nowPlaying = prevQueue[currentPlayingIndex];
+      const remaining = prevQueue
+        .slice(currentPlayingIndex + 1)
+        .filter((track) => track.id !== selectedTrack.id);
+      return [nowPlaying, selectedTrack, ...remaining];
+    });
+  };
+
+  const isTrackFeatured = useCallback(
+    (track: LibraryTrack) =>
+      Boolean(track.isFeatured) ||
+      featuredTracks.some((item) => item.id === track.id),
+    [featuredTracks],
+  );
+
+  const handleAddToFeatured = async (track: LibraryTrack) => {
+    if (!isAdmin) return;
+    setFeaturingTrackId(track.id);
+    try {
+      const res = await fetch('/api/default-tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackId: track.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to add to featured.');
+      }
+      const featuredTrack: LibraryTrack = {
+        ...(data.track || track),
+        kind: 'featured',
+        isFeatured: true,
+      };
+
+      setFeaturedTracks((prev) => {
+        const exists = prev.some((item) => item.id === featuredTrack.id);
+        if (exists) {
+          return prev.map((item) =>
+            item.id === featuredTrack.id ? featuredTrack : item,
+          );
+        }
+        return [...prev, featuredTrack];
+      });
+
+      setLibrary((prev) =>
+        prev.map((item) =>
+          item.id === track.id
+            ? { ...item, isFeatured: true, kind: item.kind }
+            : item,
+        ),
+      );
+      setFeaturedError(null);
+    } catch (err) {
+      setFeaturedError(
+        err instanceof Error ? err.message : 'Failed to feature track.',
+      );
+    } finally {
+      setFeaturingTrackId(null);
+    }
+  };
+
+  const handleAddToPlaylist = (selectedTrack: LibraryTrack) => {
     openPlaylistModal(selectedTrack);
   };
 
-  const openEditModal = (trackToEdit: Track) => {
+  const openEditModal = (trackToEdit: LibraryTrack) => {
     setEditingTrack(trackToEdit);
     setEditForm({
       title: trackToEdit.title || '',
@@ -260,9 +390,14 @@ export default function Library(): JSX.Element {
         throw new Error(data.error || 'Failed to update track.');
       }
 
-      const updatedTrack: Track = data.track || {
-        ...editingTrack,
-        ...payload,
+      const updatedIsFeatured = Boolean(
+        (data.track || editingTrack)?.isFeatured || editingTrack?.isFeatured,
+      );
+
+      const updatedTrack: LibraryTrack = {
+        ...(data.track || { ...editingTrack, ...payload }),
+        isFeatured: updatedIsFeatured,
+        kind: updatedIsFeatured ? 'featured' : 'user',
       };
 
       setLibrary((prev) =>
@@ -290,9 +425,13 @@ export default function Library(): JSX.Element {
     }
   };
 
-  const handleReorderTracks = async (orderedTrackIds: string[]) => {
+  const handleReorderTracks = async (orderedTracks: LibraryTrack[]) => {
     if (!activePlaylistFilter.id) return;
-    await reorderPlaylistTracks(activePlaylistFilter.id, orderedTrackIds);
+    const payload = orderedTracks.map((track) => ({
+      id: track.id,
+      kind: track.kind === 'featured' ? 'featured' : 'user',
+    }));
+    await reorderPlaylistTracks(activePlaylistFilter.id, payload);
   };
 
   const handlePlayPlaylist = (playlistId: string) => {
@@ -322,7 +461,29 @@ export default function Library(): JSX.Element {
     }
   };
 
-  const handleDeleteTrack = async (selectedTrack: Track) => {
+  const handleDeleteTrack = async (selectedTrack: LibraryTrack) => {
+    if (isTrackFeatured(selectedTrack)) {
+      // eslint-disable-next-line no-alert -- quick confirmation before destructive action
+      const confirmed = window.confirm(
+        'This track is featured and visible to everyone. Deleting it will also remove it from Featured. Delete anyway?',
+      );
+      if (!confirmed) return;
+      try {
+        await fetch(`/api/default-tracks/${selectedTrack.id}`, {
+          method: 'DELETE',
+        });
+        setFeaturedTracks((prev) =>
+          prev.filter((item) => item.id !== selectedTrack.id),
+        );
+      } catch (err) {
+        setFeaturedError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to remove from featured.',
+        );
+        return;
+      }
+    }
     try {
       const res = await fetch(`/api/tracks/delete-url?id=${selectedTrack.id}`);
       const { deleteURL, coverDeleteURLs = [], error } = await res.json();
@@ -410,7 +571,7 @@ export default function Library(): JSX.Element {
     : 'No songs yet. Upload your first track to get started.';
 
   return (
-    <div className="w-full pt-[4.5rem] sm:pt-10 px-4 sm:px-6 lg:px-8 pb-12 max-w-6xl mx-auto">
+    <div className="w-full pt-[4.5rem] sm:pt-10 px-4 sm:px-6 lg:px-8 pb-32 sm:pb-20 max-w-6xl mx-auto scrollbar-soft">
       <LibraryHeader
         title={activePlaylistFilter.id ? activePlaylistFilter.name : 'Library'}
         hasActiveFilter={Boolean(activePlaylistFilter.id)}
@@ -436,22 +597,78 @@ export default function Library(): JSX.Element {
           {errorDisplay}
         </div>
       )}
+      {viewMode === 'songs' && !activePlaylistFilter.id && (
+        <>
+          {featuredError && (
+            <div className="mb-4 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm shadow-soft">
+              {featuredError}
+            </div>
+          )}
+          {featuredTracks.length > 0 && (
+            <section className="mb-8 rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt/70 dark:bg-panelDark/70 p-4 sm:p-5 shadow-soft">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                    Featured
+                  </p>
+                  <h2 className="text-lg font-semibold">
+                    Always-available tracks
+                  </h2>
+                  <p className="text-sm text-muted">
+                    Curated tracks available to everyone.
+                  </p>
+                </div>
+                <span className="text-xs text-muted">
+                  {featuredTracks.length} tracks
+                </span>
+              </div>
+              <div className="max-h-64 overflow-y-auto sm:max-h-72 scrollbar-soft">
+                <TrackListView
+                  tracks={featuredTracks}
+                  onSelect={handleFeaturedSelect}
+                  onDelete={() => {}}
+                  onAddToQueue={handleFeaturedAddToQueue}
+                  onPlayNext={handleFeaturedPlayNext}
+                  onAddToPlaylist={handleAddToPlaylist}
+                />
+              </div>
+            </section>
+          )}
+        </>
+      )}
 
       {(viewMode === 'songs' || activePlaylistFilter.id) &&
         (displayedTracks.length === 0 ? (
           <EmptyState message={emptyMessage} />
         ) : (
-          <TrackListView
-            tracks={displayedTracks}
-            onSelect={handleTrackSelect}
-            onDelete={handleDeleteTrack}
-            onAddToQueue={handleAddTrackToQueue}
-            onPlayNext={handlePlayNext}
-            onAddToPlaylist={handleAddToPlaylist}
-            reorderable={Boolean(activePlaylistFilter.id)}
-            onReorder={handleReorderTracks}
-            onEdit={openEditModal}
-          />
+          <section className="space-y-3">
+            {viewMode === 'songs' && !activePlaylistFilter.id && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                    Library
+                  </p>
+                  <h2 className="text-lg font-semibold">Your uploads</h2>
+                </div>
+                <span className="text-xs text-muted">
+                  {displayedTracks.length} tracks
+                </span>
+              </div>
+            )}
+            <TrackListView
+              tracks={displayedTracks}
+              onSelect={handleTrackSelect}
+              onDelete={handleDeleteTrack}
+              onAddToQueue={handleAddTrackToQueue}
+              onPlayNext={handlePlayNext}
+              onAddToPlaylist={handleAddToPlaylist}
+              reorderable={Boolean(activePlaylistFilter.id)}
+              onReorder={handleReorderTracks}
+              onEdit={openEditModal}
+              onAddToFeatured={isAdmin ? handleAddToFeatured : undefined}
+              featuringTrackId={featuringTrackId}
+            />
+          </section>
         ))}
 
       {viewMode === 'playlists' && (

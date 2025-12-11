@@ -4,6 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 // import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import Link from 'next/link';
 
 function UserMenu() {
   const { data: session, status } = useSession();
@@ -41,6 +42,22 @@ function UserMenu() {
             </p>
             <p className="text-xs text-muted truncate">{session.user.email}</p>
           </div>
+          {session.user.role === 'ADMIN' && (
+            <MenuItem>
+              {({ focus }) => (
+                <Link
+                  href="/admin/featured"
+                  className={`block w-full px-4 py-3 text-sm ${
+                    focus
+                      ? 'bg-pastelPurple/15 dark:bg-accentDark/15 text-ink dark:text-textDark'
+                      : 'text-ink dark:text-textDark'
+                  }`}
+                >
+                  Admin: Featured tracks
+                </Link>
+              )}
+            </MenuItem>
+          )}
           <MenuItem>
             {({ focus }) => (
               <button

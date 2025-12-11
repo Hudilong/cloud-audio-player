@@ -1,6 +1,6 @@
 import prisma from '@utils/prisma';
 import { notFound } from '@utils/httpError';
-import { TrackCreateBody } from '../apiSchemas';
+import { TrackCreateBody } from '@utils/apiSchemas';
 
 export async function createTrackForUser(
   userId: string,

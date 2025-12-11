@@ -119,7 +119,18 @@ export const authOptions: NextAuthOptions = {
         return {
           ...token,
           id: user.id,
+          role: (user as SafeUser).role,
         };
+      }
+
+      if (!token.role && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { role: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+        }
       }
       return token;
     },
@@ -131,6 +142,7 @@ export const authOptions: NextAuthOptions = {
           user: {
             ...session.user,
             id: token.id,
+            role: token.role,
           },
         };
       }

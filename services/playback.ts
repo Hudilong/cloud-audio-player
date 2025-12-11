@@ -1,52 +1,100 @@
+import { LibraryTrack, LibraryTrackKind } from '@app-types/libraryTrack';
 import prisma from '@utils/prisma';
 import { forbidden, notFound } from '@utils/httpError';
 
 export type RepeatMode = 'off' | 'queue' | 'track';
 
-export type QueueState = { queueTrackIds: string[]; repeatMode: RepeatMode };
+export type QueueEntry = { id: string; kind: LibraryTrackKind };
+
+export type QueueState = { entries: QueueEntry[]; repeatMode: RepeatMode };
 
 export type PlaybackPayload = {
   trackId: string;
+  trackKind?: LibraryTrackKind;
   position: number;
   isPlaying?: boolean;
   volume?: number;
   isShuffle?: boolean;
   repeatMode?: RepeatMode;
   currentTrackIndex?: number;
+  queue?: QueueEntry[];
   queueTrackIds?: string[];
 };
+
+const normalizeRepeatMode = (value: unknown): RepeatMode =>
+  value === 'queue' || value === 'track' ? value : 'off';
+
+const toLibraryTrack = (
+  track: {
+    id: string;
+    title: string | null;
+    artist: string | null;
+    album: string | null;
+    genre: string | null;
+    duration: number;
+    s3Key: string;
+    imageURL: string | null;
+    imageBlurhash: string | null;
+    userId?: string | null;
+    isFeatured?: boolean;
+    order?: number;
+  },
+  kind: LibraryTrackKind,
+): LibraryTrack => ({
+  ...track,
+  kind,
+  isFeatured: kind === 'featured' ? true : track.isFeatured ?? false,
+});
 
 export const parseQueueState = (tracksField: unknown): QueueState => {
   if (Array.isArray(tracksField)) {
     return {
-      queueTrackIds: tracksField.filter((id) => typeof id === 'string'),
+      entries: tracksField
+        .filter((id) => typeof id === 'string')
+        .map((id) => ({ id, kind: 'user' as const })),
       repeatMode: 'off',
     };
   }
 
-  if (
-    tracksField &&
-    typeof tracksField === 'object' &&
-    'queueTrackIds' in tracksField
-  ) {
-    const queueTrackIds = Array.isArray(
-      (tracksField as { queueTrackIds?: unknown }).queueTrackIds,
-    )
-      ? ((tracksField as { queueTrackIds: unknown[] }).queueTrackIds.filter(
-          (id) => typeof id === 'string',
-        ) as string[])
-      : [];
-    const repeatModeValue = (tracksField as { repeatMode?: unknown })
-      .repeatMode;
-    const repeatMode: RepeatMode =
-      repeatModeValue === 'queue' || repeatModeValue === 'track'
-        ? repeatModeValue
-        : 'off';
+  if (tracksField && typeof tracksField === 'object') {
+    const repeatMode = normalizeRepeatMode(
+      (tracksField as { repeatMode?: unknown }).repeatMode,
+    );
 
-    return { queueTrackIds, repeatMode };
+    if (Array.isArray((tracksField as { entries?: unknown }).entries)) {
+      const entries = (tracksField as { entries: unknown[] }).entries
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const id = (entry as { id?: unknown }).id;
+          const kind = (entry as { kind?: unknown }).kind;
+          if (typeof id !== 'string') return null;
+          const normalizedKind: LibraryTrackKind =
+            kind === 'featured' ? 'featured' : 'user';
+          return { id, kind: normalizedKind };
+        })
+        .filter(Boolean) as QueueEntry[];
+
+      return { entries, repeatMode };
+    }
+
+    if ('queueTrackIds' in tracksField) {
+      const queueTrackIds = Array.isArray(
+        (tracksField as { queueTrackIds?: unknown }).queueTrackIds,
+      )
+        ? ((tracksField as { queueTrackIds: unknown[] }).queueTrackIds.filter(
+            (id) => typeof id === 'string',
+          ) as string[])
+        : [];
+      return {
+        entries: queueTrackIds.map((id) => ({ id, kind: 'user' as const })),
+        repeatMode,
+      };
+    }
+
+    return { entries: [], repeatMode };
   }
 
-  return { queueTrackIds: [], repeatMode: 'off' };
+  return { entries: [], repeatMode: 'off' };
 };
 
 export async function getPlaybackStateForUser(userId: string) {
@@ -59,21 +107,38 @@ export async function getPlaybackStateForUser(userId: string) {
     return null;
   }
 
-  const { queueTrackIds, repeatMode } = parseQueueState(playbackState.tracks);
+  const { entries, repeatMode } = parseQueueState(playbackState.tracks);
 
-  const queueTracks = queueTrackIds.length
+  const queueIds = entries.map((entry) => entry.id);
+  const queueTracks = queueIds.length
     ? await prisma.track.findMany({
-        where: { id: { in: queueTrackIds }, userId },
+        where: {
+          id: { in: queueIds },
+          OR: [{ userId }, { isFeatured: true }],
+        },
       })
     : [];
 
-  const queue = queueTrackIds
-    .map((id) => queueTracks.find((track) => track.id === id))
-    .filter(Boolean);
+  const queue = entries
+    .map((entry) => {
+      const match = queueTracks.find((track) => track.id === entry.id);
+      if (!match) return null;
+      const kind: LibraryTrackKind = match.isFeatured ? 'featured' : 'user';
+      return toLibraryTrack(match, kind);
+    })
+    .filter(Boolean) as LibraryTrack[];
+
+  const currentTrack = playbackState.track
+    ? toLibraryTrack(
+        playbackState.track,
+        playbackState.track.isFeatured ? 'featured' : 'user',
+      )
+    : null;
 
   return {
-    track: playbackState.track,
+    track: currentTrack,
     trackId: playbackState.trackId,
+    trackKind: currentTrack?.kind || 'user',
     position: playbackState.position,
     isPlaying: playbackState.isPlaying,
     volume: playbackState.volume,
@@ -91,41 +156,72 @@ export async function updatePlaybackStateForUser(
 ) {
   const {
     trackId,
+    trackKind = 'user',
     position,
     isPlaying,
     volume,
     isShuffle,
     repeatMode,
     currentTrackIndex,
+    queue,
     queueTrackIds,
   } = payload;
 
   const repeatModeValue: RepeatMode = repeatMode || 'off';
 
-  const audio = await prisma.track.findFirst({
-    where: { id: trackId, userId },
+  if (!trackId) {
+    throw forbidden('Track ID is required');
+  }
+
+  const audio = await prisma.track.findUnique({
+    where: { id: trackId },
   });
 
-  if (!audio) {
-    throw forbidden('Access denied to this audio');
+  if (
+    !audio ||
+    (audio.userId !== userId && !audio.isFeatured)
+  ) {
+    throw forbidden('Access denied to this track');
   }
 
-  let validatedQueueIds: string[] = [];
-  if (Array.isArray(queueTrackIds) && queueTrackIds.length > 0) {
-    const queueTracks = await prisma.track.findMany({
-      where: { id: { in: queueTrackIds }, userId },
-      select: { id: true },
-    });
-    const allowedIds = new Set(queueTracks.map((track) => track.id));
-    validatedQueueIds = queueTrackIds.filter((id: string) =>
-      allowedIds.has(id),
-    );
+  const targetTrack = toLibraryTrack(
+    audio,
+    audio.isFeatured ? 'featured' : 'user',
+  );
+
+  let queueEntries: QueueEntry[] = Array.isArray(queue) ? queue : [];
+
+  if (!queueEntries.length && Array.isArray(queueTrackIds)) {
+    queueEntries = queueTrackIds.map((id) => ({ id, kind: 'user' as const }));
   }
+
+  const queueTracks = queueEntries.length
+    ? await prisma.track.findMany({
+        where: {
+          id: { in: queueEntries.map((entry) => entry.id) },
+          OR: [{ userId }, { isFeatured: true }],
+        },
+        select: { id: true, isFeatured: true },
+      })
+    : [];
+
+  const allowedIds = new Map(queueTracks.map((track) => [track.id, track]));
+
+  const validatedQueueEntries = queueEntries
+    .map((entry) => {
+      const entryTrack = allowedIds.get(entry.id);
+      if (!entryTrack) return null;
+      const kind: LibraryTrackKind = entryTrack.isFeatured
+        ? 'featured'
+        : 'user';
+      return { ...entry, kind };
+    })
+    .filter(Boolean) as QueueEntry[];
 
   await prisma.playbackState.upsert({
     where: { userId },
     update: {
-      trackId,
+      trackId: targetTrack.id,
       position,
       isPlaying: typeof isPlaying === 'boolean' ? isPlaying : false,
       volume: typeof volume === 'number' ? volume : 1,
@@ -135,13 +231,13 @@ export async function updatePlaybackStateForUser(
       currentTrackIndex:
         typeof currentTrackIndex === 'number' ? currentTrackIndex : 0,
       tracks: {
-        queueTrackIds: validatedQueueIds,
+        entries: validatedQueueEntries,
         repeatMode: repeatModeValue,
       },
     },
     create: {
       userId,
-      trackId,
+      trackId: targetTrack.id,
       position,
       isPlaying: typeof isPlaying === 'boolean' ? isPlaying : false,
       volume: typeof volume === 'number' ? volume : 1,
@@ -151,7 +247,7 @@ export async function updatePlaybackStateForUser(
       currentTrackIndex:
         typeof currentTrackIndex === 'number' ? currentTrackIndex : 0,
       tracks: {
-        queueTrackIds: validatedQueueIds,
+        entries: validatedQueueEntries,
         repeatMode: repeatModeValue,
       },
     },

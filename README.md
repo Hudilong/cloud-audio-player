@@ -78,8 +78,7 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 
 ### Seeding and demo tracks
 
-- `pnpm seed` creates a dev user (`SEED_USER_EMAIL` / `SEED_USER_PASSWORD`) and seeds `SEED_TRACK_COUNT` placeholder tracks that point to `SEED_AUDIO_S3_KEY`.
-- To ship demo content for new accounts, set `DEMO_TRACK_1_KEY` / `DEMO_TRACK_2_KEY` (or a `DEMO_TRACKS` JSON array) to real object keys already uploaded to your bucket. Blurhash and cover URLs are optional but recommended.
+- `pnpm seed` creates a dev user (`SEED_USER_EMAIL` / `SEED_USER_PASSWORD`) and an admin user (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`). It seeds `SEED_TRACK_COUNT` placeholder tracks for the dev user using `SEED_AUDIO_S3_KEY`; set `SEED_ALLOW_FAKE_AUDIO=true` (optionally tweak `SEED_FAKE_AUDIO_S3_KEY`) if you want lots of non-playable tracks without uploading audio.
 
 ### Testing
 

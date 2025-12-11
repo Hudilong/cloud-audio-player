@@ -27,6 +27,7 @@ const {
   trackCreate,
   trackFindMany,
   trackFindFirst,
+  trackFindUnique,
   playlistFindFirst,
   playlistTrackUpdate,
   playlistFindUnique,
@@ -39,6 +40,7 @@ const {
   trackCreate: vi.fn(),
   trackFindMany: vi.fn(),
   trackFindFirst: vi.fn(),
+  trackFindUnique: vi.fn(),
   playlistFindFirst: vi.fn(),
   playlistTrackUpdate: vi.fn(),
   playlistFindUnique: vi.fn(),
@@ -61,6 +63,7 @@ vi.mock('@utils/prisma', () => ({
       create: trackCreate,
       findMany: trackFindMany,
       findFirst: trackFindFirst,
+      findUnique: trackFindUnique,
     },
     playlist: {
       findFirst: playlistFindFirst,
@@ -157,14 +160,27 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
         tracks.find((t) => t.id === where.id && t.userId === where.userId) ||
         null,
     );
-    trackFindMany.mockImplementation(
-      async ({ where }: { where: { id?: { in: string[] }; userId: string } }) =>
-        tracks.filter(
-          (t) =>
-            t.userId === where.userId &&
-            (!where.id?.in || where.id.in.includes(t.id)),
-        ),
+    trackFindUnique.mockImplementation(
+      async ({ where }: { where: Partial<Track> }) =>
+        tracks.find((t) => t.id === where.id) || null,
     );
+    trackFindMany.mockImplementation(async ({ where }: { where: any }) => {
+      const ids: string[] = where.id?.in || [];
+      const candidates = tracks.filter((t) => !ids.length || ids.includes(t.id));
+      if (Array.isArray(where.OR) && where.OR.length) {
+        return candidates.filter((t) =>
+          where.OR.some(
+            (cond: { userId?: string; isFeatured?: boolean }) =>
+              (cond.userId ? t.userId === cond.userId : false) ||
+              (cond.isFeatured ? Boolean((t as any).isFeatured) : false),
+          ),
+        );
+      }
+      if (where.userId) {
+        return candidates.filter((t) => t.userId === where.userId);
+      }
+      return candidates;
+    });
 
     playlistFindFirst.mockImplementation(async () => ({
       id: 'playlist-1',

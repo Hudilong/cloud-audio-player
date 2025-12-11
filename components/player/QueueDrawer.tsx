@@ -2,7 +2,7 @@
 
 /* eslint-disable react/jsx-props-no-spreading */
 import React, { useMemo, useState } from 'react';
-import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import {
   DndContext,
   DragEndEvent,
@@ -56,7 +56,7 @@ function SortableItem({ track, onRemove }: SortableItemProps) {
         type="button"
         {...attributes}
         {...listeners}
-        className="p-2 rounded-full bg-panelLight dark:bg-panelDark text-muted border border-borderLight dark:border-borderDark hover:text-ink dark:hover:text-textDark cursor-grab active:cursor-grabbing"
+        className="p-2 rounded-full bg-panelLight dark:bg-panelDark text-muted border border-borderLight dark:border-borderDark hover:text-ink dark:hover:text-textDark cursor-grab active:cursor-grabbing touch-none"
         aria-label="Drag to reorder"
       >
         <FiMenu />
@@ -95,7 +95,7 @@ export default function QueueDrawer({
   onClear,
 }: QueueDrawerProps) {
   const [open, setOpen] = useState(false);
-  const [lastRemoved, setLastRemoved] = useState<Track | null>(null);
+  const [lastRemoved, setLastRemoved] = useState<LibraryTrack | null>(null);
 
   const upNext = useMemo(
     () => queue.slice(Math.max(currentTrackIndex + 1, 0)),
@@ -104,7 +104,7 @@ export default function QueueDrawer({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 0 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -148,7 +148,12 @@ export default function QueueDrawer({
       </button>
 
       {open && (
-        <div className="fixed inset-x-3 bottom-16 sm:absolute sm:inset-auto sm:right-0 sm:bottom-12 w-auto sm:w-80 max-h-[60vh] overflow-hidden rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark shadow-glass">
+        <div
+          className="fixed inset-x-3 bottom-16 sm:absolute sm:inset-auto sm:right-0 sm:bottom-12 w-auto sm:w-80 max-h-[60vh] overflow-hidden rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark shadow-glass z-40 sm:z-30"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMoveCapture={(e) => e.stopPropagation()}
+          onTouchStartCapture={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-borderLight dark:border-borderDark">
             <div>
               <p className="text-sm font-semibold text-ink dark:text-textDark">
@@ -180,7 +185,7 @@ export default function QueueDrawer({
             </div>
           </div>
 
-          <div className="p-3 space-y-3 overflow-y-auto max-h-[50vh]">
+          <div className="p-3 space-y-3 overflow-y-auto max-h-[50vh] overscroll-contain touch-pan-y scrollbar-soft">
             {upNext.length === 0 ? (
               <div className="text-sm text-muted text-center py-6">
                 No upcoming tracks.

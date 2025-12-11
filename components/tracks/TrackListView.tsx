@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Track } from '@prisma/client';
 import {
   DndContext,
   DragEndEvent,
@@ -18,18 +17,22 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { TrackWithCover } from '@app-types/trackWithCover';
 import TrackItem from './TrackItem';
 
 interface TrackListViewProps {
-  tracks: Track[];
-  onSelect: (track: Track) => void;
-  onDelete: (track: Track) => void;
-  onAddToQueue: (track: Track) => void;
-  onPlayNext: (track: Track) => void;
-  onAddToPlaylist: (track: Track) => void;
+  tracks: TrackWithCover[];
+  onSelect: (track: TrackWithCover) => void;
+  onDelete: (track: TrackWithCover) => void;
+  onAddToQueue: (track: TrackWithCover) => void;
+  onPlayNext: (track: TrackWithCover) => void;
+  onAddToPlaylist: (track: TrackWithCover) => void;
   reorderable?: boolean;
-  onReorder?: (orderedTrackIds: string[]) => void;
-  onEdit?: (track: Track) => void;
+  onReorder?: (orderedTracks: TrackWithCover[]) => void;
+  onEdit?: (track: TrackWithCover) => void;
+  onAddToFeatured?: (track: TrackWithCover) => void;
+  onRemoveFromFeatured?: (track: TrackWithCover) => void;
+  featuringTrackId?: string | null;
 }
 
 function SortableTrack({
@@ -40,8 +43,11 @@ function SortableTrack({
   onPlayNext,
   onAddToPlaylist,
   onEdit,
+  onAddToFeatured,
+  onRemoveFromFeatured,
+  featuringTrackId,
 }: Omit<TrackListViewProps, 'tracks' | 'reorderable' | 'onReorder'> & {
-  track: Track;
+  track: TrackWithCover;
 }) {
   const {
     attributes,
@@ -66,6 +72,9 @@ function SortableTrack({
       onPlayNext={onPlayNext}
       onAddToPlaylist={onAddToPlaylist}
       onEdit={onEdit}
+      onAddToFeatured={onAddToFeatured}
+      onRemoveFromFeatured={onRemoveFromFeatured}
+      featuringTrackId={featuringTrackId}
       dragHandleProps={{ ...attributes, ...listeners }}
       setNodeRef={setNodeRef}
       style={style}
@@ -82,19 +91,27 @@ export default function TrackListView({
   onPlayNext,
   onAddToPlaylist,
   onEdit,
+  onAddToFeatured,
+  onRemoveFromFeatured,
+  featuringTrackId,
   reorderable = false,
   onReorder,
 }: TrackListViewProps) {
-  const [items, setItems] = useState<Track[]>(tracks);
+  const [items, setItems] = useState<TrackWithCover[]>(tracks);
 
   useEffect(() => {
-    setItems(tracks);
+    setItems((prev) => {
+      const sameOrder =
+        prev.length === tracks.length &&
+        prev.every((item, idx) => item.id === tracks[idx]?.id);
+      return sameOrder ? prev : tracks;
+    });
   }, [tracks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 0,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -112,7 +129,7 @@ export default function TrackListView({
 
     const newItems = arrayMove(items, oldIndex, newIndex);
     setItems(newItems);
-    onReorder?.(newItems.map((item) => item.id));
+    onReorder?.(newItems);
   };
 
   const list = useMemo(
@@ -128,6 +145,9 @@ export default function TrackListView({
             onPlayNext={onPlayNext}
             onAddToPlaylist={onAddToPlaylist}
             onEdit={onEdit}
+            onAddToFeatured={onAddToFeatured}
+            onRemoveFromFeatured={onRemoveFromFeatured}
+            featuringTrackId={featuringTrackId}
           />
         ))}
       </ul>
@@ -142,6 +162,9 @@ export default function TrackListView({
       onSelect,
       reorderable,
       tracks,
+      onAddToFeatured,
+      onRemoveFromFeatured,
+      featuringTrackId,
     ],
   );
 
@@ -164,6 +187,9 @@ export default function TrackListView({
               onPlayNext={onPlayNext}
               onAddToPlaylist={onAddToPlaylist}
               onEdit={onEdit}
+              onAddToFeatured={onAddToFeatured}
+              onRemoveFromFeatured={onRemoveFromFeatured}
+              featuringTrackId={featuringTrackId}
             />
           ))}
         </ul>

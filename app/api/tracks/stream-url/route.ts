@@ -44,17 +44,22 @@ export async function GET(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true },
   });
 
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const audio = await prisma.track.findFirst({
-    where: { id, userId: user.id },
+  const audio = await prisma.track.findUnique({
+    where: { id },
   });
 
-  if (!audio) {
+  const hasAccess =
+    audio &&
+    (audio.userId === user.id || audio.isFeatured || user.role === 'ADMIN');
+
+  if (!audio || !hasAccess) {
     return NextResponse.json(
       { error: 'Audio not found or access denied' },
       { status: 403 },

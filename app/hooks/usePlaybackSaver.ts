@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import { debounce } from '@utils/debounce';
 
 type RepeatMode = 'off' | 'queue' | 'track';
 
 type Snapshot = {
-  track: Track | null;
+  track: LibraryTrack | null;
   currentTime: number;
   isPlaying: boolean;
-  queue: Track[];
+  queue: LibraryTrack[];
   currentTrackIndex: number;
   volume: number;
   isShuffle: boolean;
@@ -64,13 +64,17 @@ export function usePlaybackSaver(snapshot: Snapshot) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           trackId: current.track.id,
+          trackKind: current.track.kind,
           position: current.currentTime,
           isPlaying: current.isPlaying,
           volume: current.volume,
           isShuffle: current.isShuffle,
           repeatMode: current.repeatMode,
           currentTrackIndex: current.currentTrackIndex,
-          queueTrackIds: current.queue.map((item) => item.id),
+          queue: current.queue.map((item) => ({
+            id: item.id,
+            kind: item.kind,
+          })),
         }),
       });
       isDirtyRef.current = false;

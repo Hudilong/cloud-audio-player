@@ -42,7 +42,7 @@ function ExtraControls() {
       <button
         type="button"
         onClick={cycleRepeatMode}
-        className={`p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors ${
+        className={`p-2 rounded-full hover:bg-panelLightAlt dark:hover:bg-panelDarkAlt hover:text-ink dark:hover:text-textDark transition-colors h-10 w-10 flex items-center justify-center ${
           repeatMode !== 'off' ? 'text-accentDark' : ''
         }`}
         aria-label={repeatLabel}

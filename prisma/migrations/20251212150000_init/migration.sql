@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -6,6 +9,7 @@ CREATE TABLE "User" (
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
     "password" TEXT,
+    "role" "Role" NOT NULL DEFAULT 'USER',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -53,9 +57,11 @@ CREATE TABLE "Track" (
     "album" TEXT,
     "genre" TEXT,
     "imageURL" TEXT,
+    "imageBlurhash" TEXT,
     "duration" INTEGER NOT NULL,
     "s3Key" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -72,6 +78,7 @@ CREATE TABLE "PlaybackState" (
     "volume" DOUBLE PRECISION NOT NULL DEFAULT 1.0,
     "shuffle" BOOLEAN NOT NULL DEFAULT false,
     "repeat" BOOLEAN NOT NULL DEFAULT false,
+    "repeatMode" TEXT NOT NULL DEFAULT 'off',
     "currentTrackIndex" INTEGER NOT NULL DEFAULT 0,
     "tracks" JSONB NOT NULL DEFAULT '[]',
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -120,10 +127,10 @@ CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationTok
 CREATE UNIQUE INDEX "PlaybackState_userId_key" ON "PlaybackState"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PlaybackState_trackId_key" ON "PlaybackState"("trackId");
+CREATE UNIQUE INDEX "PlaylistTrack_playlistId_position_key" ON "PlaylistTrack"("playlistId", "position");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PlaylistTrack_playlistId_position_key" ON "PlaylistTrack"("playlistId", "position");
+CREATE UNIQUE INDEX "PlaylistTrack_playlistId_trackId_key" ON "PlaylistTrack"("playlistId", "trackId");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -147,4 +154,5 @@ ALTER TABLE "Playlist" ADD CONSTRAINT "Playlist_userId_fkey" FOREIGN KEY ("userI
 ALTER TABLE "PlaylistTrack" ADD CONSTRAINT "PlaylistTrack_playlistId_fkey" FOREIGN KEY ("playlistId") REFERENCES "Playlist"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PlaylistTrack" ADD CONSTRAINT "PlaylistTrack_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PlaylistTrack" ADD CONSTRAINT "PlaylistTrack_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
