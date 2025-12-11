@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
-import AuthShell from '../../components/auth/AuthShell';
+import AuthShell from '@components/auth/AuthShell';
 import { useAuthForm } from '../hooks/useAuthForm';
 
 function LoginPage() {

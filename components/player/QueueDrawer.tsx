@@ -20,9 +20,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FiMenu, FiX, FiRotateCcw, FiTrash2, FiList } from 'react-icons/fi';
-import { formatTime } from '../utils/formatTime';
-import { TrackWithCover } from '../types/trackWithCover';
-import CoverImage from './ui/CoverImage';
+import { formatTime } from '@utils/formatTime';
+import { TrackWithCover } from '@app-types/trackWithCover';
+import CoverImage from '@components/ui/CoverImage';
 
 type QueueDrawerProps = {
   queue: TrackWithCover[];

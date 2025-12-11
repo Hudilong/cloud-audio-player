@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@utils/formatTime';
+import { Item } from '@app-types/item';
+import { TrackWithCover } from '@app-types/trackWithCover';
+import CoverImage from '@components/ui/CoverImage';
+import { Track } from '@prisma/client';
 import ContextualMenu from './ContextualMenu';
-import { Item } from '../types/item';
-import { TrackWithCover } from '../types/trackWithCover';
-import CoverImage from './ui/CoverImage';
 
 interface TrackCardProps {
   track: TrackWithCover;

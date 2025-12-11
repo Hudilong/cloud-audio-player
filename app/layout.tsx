@@ -3,11 +3,11 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { Inter, Poppins, Space_Grotesk } from 'next/font/google';
 import { getServerSession } from 'next-auth';
+import Navbar from '@components/layout/Navbar';
+import Player from '@components/player/Player';
+import MainContent from '@components/layout/MainContent';
 import SessionProvider from './context/SessionProvider';
-import Navbar from '../components/Navbar';
 import { PlayerProvider } from './context/PlayerContext';
-import Player from '../components/Player';
-import MainContent from '../components/MainContent';
 
 const inter = Inter({
   subsets: ['latin'],

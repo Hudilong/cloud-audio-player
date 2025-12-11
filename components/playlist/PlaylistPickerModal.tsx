@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PlaylistWithTracks } from '../types/playlist';
+import { PlaylistWithTracks } from '@app-types/playlist';
 
 interface PlaylistPickerModalProps {
   isOpen: boolean;

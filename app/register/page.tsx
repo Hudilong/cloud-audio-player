@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import AuthShell from '../../components/auth/AuthShell';
+import AuthShell from '@components/auth/AuthShell';
 import { useAuthForm } from '../hooks/useAuthForm';
 import { validateEmail } from '../../utils/validateEmail';
 

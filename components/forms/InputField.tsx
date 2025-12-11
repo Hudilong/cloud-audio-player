@@ -1,5 +1,5 @@
 import { ChangeEvent } from 'react';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@utils/formatTime';
 
 interface InputProps {
   name: string;

@@ -10,7 +10,10 @@ export function getCoverSrcForTrack(imageURL?: string | null) {
   return getCoverSrc(imageURL);
 }
 
-export function getCoverProps(imageURL?: string | null, imageBlurhash?: string | null) {
+export function getCoverProps(
+  imageURL?: string | null,
+  imageBlurhash?: string | null,
+) {
   const src = getCoverSrc(imageURL);
   const blurDataURL = blurhashToDataURL(imageBlurhash);
   return {

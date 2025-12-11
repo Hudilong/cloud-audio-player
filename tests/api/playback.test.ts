@@ -28,7 +28,10 @@ vi.mock('@utils/prisma', () => ({
       findUnique: playbackFindUnique,
       upsert: playbackUpsert,
     },
-    track: { findFirst: trackFindFirst, findMany: vi.fn().mockResolvedValue([]) },
+    track: {
+      findFirst: trackFindFirst,
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   },
 }));
 
@@ -44,7 +47,10 @@ describe('api/playback', () => {
     getServerSessionMock.mockResolvedValue({
       user: { email: 'test@example.com', id: 'user-1' },
     });
-    userFindUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+    userFindUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'test@example.com',
+    });
     trackFindFirst.mockResolvedValue({ id: 'track-1', userId: 'user-1' });
     playbackFindUnique.mockResolvedValue({
       trackId: 'track-1',

@@ -54,7 +54,10 @@ describe('api/playlists/[id]/reorder', () => {
     getServerSessionMock.mockResolvedValue({
       user: { email: 'test@example.com' },
     });
-    userFindUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+    userFindUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'test@example.com',
+    });
     playlistFindFirst.mockResolvedValue({
       id: 'p1',
       userId: 'user-1',

@@ -5,11 +5,12 @@
 import React, { CSSProperties, HTMLAttributes, useContext } from 'react';
 import { FiPause, FiPlay, FiMenu } from 'react-icons/fi';
 import { PlayerContext } from '@/context/PlayerContext';
+import { Item } from '@app-types/item';
+import { formatTime } from '@utils/formatTime';
+import { TrackWithCover } from '@app-types/trackWithCover';
+import CoverImage from '@components/ui/CoverImage';
+import { Track } from '@prisma/client';
 import ContextualMenu from './ContextualMenu';
-import { Item } from '../types/item';
-import { formatTime } from '../utils/formatTime';
-import { TrackWithCover } from '../types/trackWithCover';
-import CoverImage from './ui/CoverImage';
 
 interface TrackItemProps {
   track: TrackWithCover;

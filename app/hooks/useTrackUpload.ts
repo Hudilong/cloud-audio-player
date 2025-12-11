@@ -63,7 +63,8 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
     const coverPicture = metadataResult.common.picture?.[0];
     if (coverPicture) {
       const mime = coverPicture.format || 'image/jpeg';
-      const embeddedFile = new File([coverPicture.data], 'embedded-cover', {
+      const embeddedBlob = new Blob([coverPicture.data], { type: mime });
+      const embeddedFile = new File([embeddedBlob], 'embedded-cover', {
         type: mime,
       });
       const preview = await readFileAsDataURL(embeddedFile);

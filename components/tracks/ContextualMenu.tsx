@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { Item } from '../types/item';
+import { Item } from '@app-types/item';
 
 interface ContextualMenuProps {
   items: Item[];

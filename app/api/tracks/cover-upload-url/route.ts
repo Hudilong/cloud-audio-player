@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid image type.' }, { status: 400 });
   }
 
-  const extension = fileTypeInfo.ext === 'jpeg' ? 'jpg' : fileTypeInfo.ext;
+  const extension =
+    fileTypeInfo.mime === 'image/jpeg' ? 'jpg' : fileTypeInfo.ext;
   const baseKey = `covers/${nanoid()}`;
   const variants = buildVariantConfigs(baseKey, extension);
 

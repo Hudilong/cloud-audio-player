@@ -3,13 +3,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { PlayerContext } from '@/context/PlayerContext';
-import TrackInfoDisplay from './TrackInfoDisplay';
+import TrackInfoDisplay from '@components/tracks/TrackInfoDisplay';
+import CoverImage from '@components/ui/CoverImage';
+import { TrackWithCover } from '@app-types/trackWithCover';
 import PlayerControls from './PlayerControls';
 import ExtraControls from './ExtraControls';
 import ProgressBar from './ProgressBar';
 import QueueDrawer from './QueueDrawer';
-import { TrackWithCover } from '../types/trackWithCover';
-import CoverImage from './ui/CoverImage';
 
 export default function Player() {
   const playerContext = useContext(PlayerContext);

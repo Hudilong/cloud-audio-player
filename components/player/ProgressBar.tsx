@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useRef, useState } from 'react';
 import { PlayerContext } from '@/context/PlayerContext';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@utils/formatTime';
 
 function ProgressBar() {
   const playerContext = useContext(PlayerContext);

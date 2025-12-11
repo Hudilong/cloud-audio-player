@@ -12,17 +12,17 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { PlayerContext } from '@/context/PlayerContext';
 import { uploadCoverVariantsWithBlurhash } from '@services/storage/coverService';
-import TrackListView from '../../components/TrackListView';
-import PlaylistPickerModal from '../../components/PlaylistPickerModal';
-import FileUploadForm from '../../components/FileUploadForm';
-import LibraryHeader from '../../components/library/LibraryHeader';
-import PlaylistGrid from '../../components/library/PlaylistGrid';
-import GlassModal from '../../components/ui/GlassModal';
-import EmptyState from '../../components/library/EmptyState';
+import TrackListView from '@components/tracks/TrackListView';
+import PlaylistPickerModal from '@components/playlist/PlaylistPickerModal';
+import FileUploadForm from '@components/forms/FileUploadForm';
+import LibraryHeader from '@components/library/LibraryHeader';
+import PlaylistGrid from '@components/library/PlaylistGrid';
+import GlassModal from '@components/ui/GlassModal';
+import EmptyState from '@components/library/EmptyState';
+import { getCoverSrc } from '@utils/getCoverSrc';
+import { readFileAsDataURL } from '@utils/imageProcessing';
 import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import { useTrackUpload } from '../hooks/useTrackUpload';
-import { getCoverSrc } from '../../utils/getCoverSrc';
-import { readFileAsDataURL } from '../../utils/imageProcessing';
 
 export default function Library(): JSX.Element {
   const { status } = useSession();
@@ -538,7 +538,6 @@ export default function Library(): JSX.Element {
                 setEditingTrack(null);
                 setEditCoverFile(null);
                 setEditCoverPreview(null);
-                setEditBlurhash(null);
                 setEditError(null);
               }}
               className="px-4 py-2 rounded-full border border-white/70 dark:border-white/20 text-sm text-muted hover:bg-surfaceMuted/70 dark:hover:bg-backgroundDark/70"

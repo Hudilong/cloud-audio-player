@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent } from 'react';
-import { TrackInfo } from '../types';
+import { TrackInfo } from '@app-types/trackInfo';
 import InputField from './InputField';
 
 interface FileUploadFormProps {
@@ -15,7 +15,7 @@ interface FileUploadFormProps {
   onSubmit: (e: FormEvent) => void;
 }
 
-const trackInfoKeys: (keyof TrackInfo)[] = [
+const trackInfoKeys: Array<keyof TrackInfo & string> = [
   'title',
   'artist',
   'album',
@@ -126,7 +126,7 @@ function FileUploadForm({
           <InputField
             key={field}
             name={field}
-            value={metadata[field] as string}
+            value={String(metadata[field] ?? '')}
             onChange={onInputChange}
             readOnly={field === 'duration'}
           />

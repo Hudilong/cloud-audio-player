@@ -1,7 +1,9 @@
 import { ZodError, ZodSchema } from 'zod';
 import { NextResponse } from 'next/server';
 
-type ParsedBody<T> = { success: true; data: T } | { success: false; error: NextResponse };
+type ParsedBody<T> =
+  | { success: true; data: T }
+  | { success: false; error: NextResponse };
 
 export async function parseJsonBody<T>(
   request: Request,
