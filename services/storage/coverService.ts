@@ -1,15 +1,12 @@
-import { readFileAsDataURL, resizeImageToBlob } from './imageProcessing';
+import { readFileAsDataURL, resizeImageToBlob } from '@utils/imageProcessing';
+import { generateBlurhashFromFile } from '@utils/blurhash';
 
-type UploadVariantsResponse = {
-  variants: Record<
-    string,
-    { key: string; uploadURL: string; contentType: string }
-  >;
+export type CoverUploadResult = {
+  imageURL: string | null;
+  imageBlurhash: string | null;
 };
 
-export async function uploadCoverVariants(
-  coverFile: File,
-): Promise<string | null> {
+export async function uploadCoverVariantsWithBlurhash(coverFile: File) {
   const dataUrl = await readFileAsDataURL(coverFile);
   const base64Buffer = dataUrl.split(',')[1];
 
@@ -22,12 +19,10 @@ export async function uploadCoverVariants(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const signerData = (await signerResponse.json()) as UploadVariantsResponse;
+  const signerData = await signerResponse.json();
 
-  if (!signerResponse.ok || (signerData as any).error) {
-    throw new Error(
-      (signerData as any).error || 'Failed to prepare cover upload',
-    );
+  if (!signerResponse.ok || signerData.error) {
+    throw new Error(signerData.error || 'Failed to prepare cover upload');
   }
 
   const largeBlob = await resizeImageToBlob(coverFile, 1200, 'image/webp');
@@ -35,7 +30,11 @@ export async function uploadCoverVariants(
 
   const uploads: Array<{
     blob: Blob | File;
-    variant: { key: string; uploadURL: string; contentType: string };
+    variant: {
+      key: string;
+      uploadURL: string;
+      contentType: string;
+    };
   }> = [
     {
       blob: coverFile,
@@ -58,5 +57,8 @@ export async function uploadCoverVariants(
   const primaryKey =
     signerData.variants.large?.key || signerData.variants.original?.key;
 
-  return primaryKey || null;
+  const imageURL = primaryKey || null;
+  const imageBlurhash = await generateBlurhashFromFile(coverFile);
+
+  return { imageURL, imageBlurhash } as CoverUploadResult;
 }

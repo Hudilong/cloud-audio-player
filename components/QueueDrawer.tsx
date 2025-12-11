@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react/jsx-props-no-spreading */
 import React, { useMemo, useState } from 'react';
 import { Track } from '@prisma/client';
 import {
@@ -19,12 +20,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FiMenu, FiX, FiRotateCcw, FiTrash2, FiList } from 'react-icons/fi';
-import Image from 'next/image';
-import { getCoverProps } from '../utils/getCoverSrc';
 import { formatTime } from '../utils/formatTime';
+import { TrackWithCover } from '../types/trackWithCover';
+import CoverImage from './ui/CoverImage';
 
 type QueueDrawerProps = {
-  queue: Track[];
+  queue: TrackWithCover[];
   currentTrackIndex: number;
   onReorder: (trackIds: string[]) => void;
   onRemove: (trackId: string) => void;
@@ -32,7 +33,7 @@ type QueueDrawerProps = {
 };
 
 type SortableItemProps = {
-  track: Track;
+  track: TrackWithCover;
   onRemove: (trackId: string) => void;
 };
 
@@ -44,11 +45,6 @@ function SortableItem({ track, onRemove }: SortableItemProps) {
     transform: CSS.Transform.toString(transform),
     transition,
   };
-
-  const cover = getCoverProps(
-    (track as any).imageURL,
-    (track as any).imageBlurhash,
-  );
 
   return (
     <li
@@ -65,13 +61,11 @@ function SortableItem({ track, onRemove }: SortableItemProps) {
       >
         <FiMenu />
       </button>
-      <Image
-        src={cover.src}
+      <CoverImage
+        track={track}
         width={40}
         height={40}
         alt={track.title || 'Track'}
-        placeholder={cover.placeholder as any}
-        blurDataURL={cover.blurDataURL}
         className="h-10 w-10 rounded-lg object-cover border border-white/70 dark:border-white/10"
       />
       <div className="flex-1 min-w-0">
@@ -212,9 +206,7 @@ export default function QueueDrawer({
           </div>
 
           <div className="px-4 py-3 border-t border-borderLight dark:border-borderDark flex items-center justify-between">
-            <span className="text-xs text-muted">
-              {upNext.length} in queue
-            </span>
+            <span className="text-xs text-muted">{upNext.length} in queue</span>
             <button
               type="button"
               onClick={() => {

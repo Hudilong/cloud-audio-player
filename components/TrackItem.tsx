@@ -1,17 +1,18 @@
 'use client';
 
+/* eslint-disable react/jsx-props-no-spreading */
+
 import React, { CSSProperties, HTMLAttributes, useContext } from 'react';
-import Image from 'next/image';
 import { FiPause, FiPlay, FiMenu } from 'react-icons/fi';
-import { Track } from '@prisma/client';
 import { PlayerContext } from '@/context/PlayerContext';
 import ContextualMenu from './ContextualMenu';
 import { Item } from '../types/item';
 import { formatTime } from '../utils/formatTime';
-import { getCoverProps } from '../utils/getCoverSrc';
+import { TrackWithCover } from '../types/trackWithCover';
+import CoverImage from './ui/CoverImage';
 
 interface TrackItemProps {
-  track: Track;
+  track: TrackWithCover;
   onSelect: (track: Track) => void;
   onDelete: (track: Track) => void;
   onAddToQueue: (track: Track) => void;
@@ -102,23 +103,13 @@ export default function TrackItem({
         >
           {isPlayingCurrent ? <FiPause /> : <FiPlay />}
         </button>
-        {(() => {
-          const cover = getCoverProps(
-            (track as any).imageURL,
-            (track as any).imageBlurhash,
-          );
-          return (
-            <Image
-              width={48}
-              height={48}
-              src={cover.src}
-              alt={track.title || 'track art'}
-              placeholder={cover.placeholder as any}
-              blurDataURL={cover.blurDataURL}
-              className="h-12 w-12 rounded-xl object-cover border border-white/70 dark:border-white/10 flex-shrink-0"
-            />
-          );
-        })()}
+        <CoverImage
+          track={track}
+          width={48}
+          height={48}
+          alt={track.title || 'track art'}
+          className="h-12 w-12 rounded-xl object-cover border border-white/70 dark:border-white/10 flex-shrink-0"
+        />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ink dark:text-textDark truncate">
             {track.title}

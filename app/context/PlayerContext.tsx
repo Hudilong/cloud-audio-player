@@ -11,7 +11,7 @@ import React, {
   SetStateAction,
 } from 'react';
 import { Track } from '@prisma/client';
-import { debounce } from '@utils/debounce';
+import { usePlaybackSaver } from '../hooks/usePlaybackSaver';
 
 interface PlayerContextProps {
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -59,40 +59,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [repeatMode, setRepeatMode] = useState<'off' | 'queue' | 'track'>(
     'off',
   );
-  const playbackSnapshotRef = useRef<{
-    track: Track | null;
-    currentTime: number;
-    isPlaying: boolean;
-    queue: Track[];
-    currentTrackIndex: number;
-    volume: number;
-    isShuffle: boolean;
-    repeatMode: 'off' | 'queue' | 'track';
-  }>({
-    track: null,
-    currentTime: 0,
-    isPlaying: false,
-    queue: [],
-    currentTrackIndex: 0,
-    volume: 1,
-    isShuffle: false,
-    repeatMode: 'off',
-  });
-  const isDirtyRef = useRef(false);
-
-  useEffect(() => {
-    playbackSnapshotRef.current = {
-      track,
-      currentTime,
-      isPlaying,
-      queue,
-      currentTrackIndex,
-      volume,
-      isShuffle,
-      repeatMode,
-    };
-    isDirtyRef.current = true;
-  }, [
+  const { persist: persistPlayback, debouncedPersist } = usePlaybackSaver({
     track,
     currentTime,
     isPlaying,
@@ -101,51 +68,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     volume,
     isShuffle,
     repeatMode,
-  ]);
-
-  const persistPlayback = useCallback(async () => {
-    const snapshot = playbackSnapshotRef.current;
-    if (!snapshot.track) return;
-    if (!isDirtyRef.current) return;
-    try {
-      await fetch('/api/playback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trackId: snapshot.track.id,
-          position: snapshot.currentTime,
-          isPlaying: snapshot.isPlaying,
-          volume: snapshot.volume,
-          isShuffle: snapshot.isShuffle,
-          repeatMode: snapshot.repeatMode,
-          currentTrackIndex: snapshot.currentTrackIndex,
-          queueTrackIds: snapshot.queue.map((item) => item.id),
-        }),
-      });
-      isDirtyRef.current = false;
-    } catch {
-      // Ignore persistence errors to avoid interrupting playback.
-    }
-  }, []);
-
-  const debouncedPersist = useMemo(
-    () => debounce(persistPlayback, 400),
-    [persistPlayback],
-  );
-
-  useEffect(() => {
-    if (!isPlaying) {
-      return () => {};
-    }
-
-    const interval = window.setInterval(() => {
-      persistPlayback();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [isPlaying, persistPlayback]);
+  });
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
@@ -277,7 +200,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         .map((id) => trackMap.get(id))
         .filter(Boolean) as Track[];
       setQueue([...prefix, ...reordered]);
-      isDirtyRef.current = true;
     },
     [currentTrackIndex, queue],
   );
@@ -285,11 +207,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const removeUpcoming = useCallback(
     (trackId: string) => {
       const newQueue = queue.filter(
-        (track, index) =>
-          !(index > currentTrackIndex && track.id === trackId),
+        (item, index) => !(index > currentTrackIndex && item.id === trackId),
       );
       setQueue(newQueue);
-      isDirtyRef.current = true;
     },
     [currentTrackIndex, queue],
   );
@@ -297,7 +217,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const clearUpcoming = useCallback(() => {
     const newQueue = queue.slice(0, currentTrackIndex + 1);
     setQueue(newQueue);
-    isDirtyRef.current = true;
   }, [currentTrackIndex, queue]);
 
   useEffect(() => {

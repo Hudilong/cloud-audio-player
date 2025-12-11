@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './app'),
       '@utils': resolve(__dirname, './utils'),
+      '@services': resolve(__dirname, './services'),
     },
   },
   test: {

@@ -9,7 +9,7 @@ import {
 } from '../helpers/mockPlayerContext';
 
 vi.mock('next/image', () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  default: ({ blurDataURL: _blur, placeholder: _ph, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { placeholder?: string; blurDataURL?: string }) => (
     // eslint-disable-next-line jsx-a11y/alt-text -- alt forwarded
     <img {...props} />
   ),

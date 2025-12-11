@@ -83,7 +83,10 @@ export async function GET(request: NextRequest) {
     try {
       const proxyRes = await fetch(imageKey);
       if (!proxyRes.ok || !proxyRes.body) {
-        return NextResponse.json({ error: 'Cover not accessible' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Cover not accessible' },
+          { status: 404 },
+        );
       }
       const contentType = proxyRes.headers.get('content-type') || 'image/jpeg';
       return new NextResponse(proxyRes.body, {
@@ -115,9 +118,13 @@ export async function GET(request: NextRequest) {
       try {
         const proxyRes = await fetch(publicUrl);
         if (!proxyRes.ok || !proxyRes.body) {
-          return NextResponse.json({ error: 'Cover not accessible' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'Cover not accessible' },
+            { status: 404 },
+          );
         }
-        const contentType = proxyRes.headers.get('content-type') || 'image/jpeg';
+        const contentType =
+          proxyRes.headers.get('content-type') || 'image/jpeg';
         return new NextResponse(proxyRes.body, {
           status: 200,
           headers: {
@@ -151,7 +158,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Cover not found' }, { status: 404 });
     }
 
-    return new NextResponse(body as any, {
+    return new NextResponse(body as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': s3Response.ContentType || 'image/jpeg',
@@ -166,9 +173,13 @@ export async function GET(request: NextRequest) {
       try {
         const proxyRes = await fetch(publicUrl);
         if (!proxyRes.ok || !proxyRes.body) {
-          return NextResponse.json({ error: 'Cover not accessible' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'Cover not accessible' },
+            { status: 404 },
+          );
         }
-        const contentType = proxyRes.headers.get('content-type') || 'image/jpeg';
+        const contentType =
+          proxyRes.headers.get('content-type') || 'image/jpeg';
         return new NextResponse(proxyRes.body, {
           status: 200,
           headers: {

@@ -5,6 +5,8 @@ import { fileTypeFromBuffer } from 'file-type';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { authOptions } from '@utils/authOptions';
+import { z } from 'zod';
+import { parseJsonBody } from '@utils/validation';
 
 const s3 = new S3Client({
   region: process.env.BUCKET_REGION!,
@@ -54,14 +56,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { fileBuffer, type } = await request.json();
+  const bodySchema = z.object({
+    fileBuffer: z.string().min(1),
+    type: z.string().min(1),
+  });
 
-  if (!fileBuffer || !type) {
-    return NextResponse.json(
-      { error: 'Missing required parameters' },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.success) return parsed.error;
+
+  const { fileBuffer } = parsed.data;
 
   const fileTypeInfo = await fileTypeFromBuffer(
     Buffer.from(fileBuffer, 'base64'),

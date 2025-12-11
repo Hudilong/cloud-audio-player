@@ -37,9 +37,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
   }
 
-  const coverKey = audio.imageURL && !audio.imageURL.startsWith('http')
-    ? audio.imageURL
-    : null;
+  const coverKey =
+    audio.imageURL && !audio.imageURL.startsWith('http')
+      ? audio.imageURL
+      : null;
 
   const buildCoverKeys = (key: string) => {
     const keys = new Set<string>();

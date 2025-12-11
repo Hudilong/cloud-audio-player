@@ -1,11 +1,10 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { uploadCoverVariantsWithBlurhash } from '@services/storage/coverService';
 import { parseBlob } from 'music-metadata-browser';
 import { TrackInfo } from '../../types';
 import { readFileAsDataURL } from '../../utils/imageProcessing';
-import { uploadCoverVariants } from '../../utils/coverUpload';
-import { generateBlurhashFromFile } from '../../utils/blurhash';
 
 interface UseTrackUploadOptions {
   onSuccess?: () => void;
@@ -135,8 +134,9 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
           let imageBlurhash: string | null = null;
 
           if (coverFile) {
-            imageURL = await uploadCoverVariants(coverFile);
-            imageBlurhash = await generateBlurhashFromFile(coverFile);
+            const result = await uploadCoverVariantsWithBlurhash(coverFile);
+            imageURL = result.imageURL;
+            imageBlurhash = result.imageBlurhash;
           }
 
           const base64Buffer = reader.result?.toString().split(',')[1];
@@ -194,14 +194,7 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
 
       reader.readAsDataURL(selectedFile);
     },
-    [
-      closeUploadModal,
-      coverFile,
-      options,
-      selectedFile,
-      trackInfo,
-      uploadCoverVariants,
-    ],
+    [closeUploadModal, coverFile, options, selectedFile, trackInfo],
   );
 
   return {

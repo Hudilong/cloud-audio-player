@@ -2,14 +2,14 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import Image from 'next/image';
 import { PlayerContext } from '@/context/PlayerContext';
 import TrackInfoDisplay from './TrackInfoDisplay';
 import PlayerControls from './PlayerControls';
 import ExtraControls from './ExtraControls';
 import ProgressBar from './ProgressBar';
-import { getCoverProps } from '../utils/getCoverSrc';
 import QueueDrawer from './QueueDrawer';
+import { TrackWithCover } from '../types/trackWithCover';
+import CoverImage from './ui/CoverImage';
 
 export default function Player() {
   const playerContext = useContext(PlayerContext);
@@ -136,18 +136,13 @@ export default function Player() {
           {isCollapsed ? (
             <div className="relative flex items-center gap-2 sm:gap-3">
               {(() => {
-                const cover = getCoverProps(
-                  (track as any).imageURL,
-                  (track as any).imageBlurhash,
-                );
+                const trackWithCover = track as TrackWithCover;
                 return (
-                  <Image
+                  <CoverImage
+                    track={trackWithCover}
                     width={48}
                     height={48}
-                    src={cover.src}
                     alt={track.title || 'track'}
-                    placeholder={cover.placeholder as any}
-                    blurDataURL={cover.blurDataURL}
                     className="rounded-2xl w-10 h-10 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
                   />
                 );
@@ -171,18 +166,13 @@ export default function Player() {
             <div className="relative flex flex-col gap-2 sm:gap-3">
               <div className="flex items-center gap-2.5 sm:gap-3.5">
                 {(() => {
-                  const cover = getCoverProps(
-                    (track as any).imageURL,
-                    (track as any).imageBlurhash,
-                  );
+                  const trackWithCover = track as TrackWithCover;
                   return (
-                    <Image
+                    <CoverImage
+                      track={trackWithCover}
                       width={56}
                       height={56}
-                      src={cover.src}
                       alt={track.title || 'track'}
-                      placeholder={cover.placeholder as any}
-                      blurDataURL={cover.blurDataURL}
                       className="rounded-2xl w-10 h-10 sm:w-12 sm:h-12 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
                     />
                   );

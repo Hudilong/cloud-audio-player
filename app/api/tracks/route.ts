@@ -1,58 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@utils/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@utils/authOptions';
+import { parseJsonBody } from '@utils/validation';
+import { trackCreateSchema } from '@utils/apiSchemas';
+import { createTrackForUser, listTracksForUser } from '@services/track';
+import { toNextError, unauthorized } from '@utils/httpError';
+import prisma from '@utils/prisma';
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return toNextError(unauthorized());
   }
 
-  const {
-    title,
-    artist,
-    album,
-    duration,
-    s3Key,
-    genre,
-    imageURL,
-    imageBlurhash,
-  } =
-    await request.json();
-
-  if (!title || !artist || !duration || !s3Key || !genre) {
-    return NextResponse.json(
-      { error: 'Missing required fields' },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, trackCreateSchema);
+  if (!parsed.success) return parsed.error;
 
   try {
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return toNextError(unauthorized());
     }
 
-    // Save the audio metadata and file URL to the database
-    const track = await prisma.track.create({
-      data: {
-        title,
-        artist,
-        album,
-        genre,
-        duration, // Duration in seconds
-        s3Key,
-        imageURL: imageURL || null,
-        imageBlurhash: imageBlurhash || null,
-        userId: user.id,
-      },
-    });
+    const track = await createTrackForUser(user.id, parsed.data);
 
     return NextResponse.json(
       {
@@ -61,8 +35,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
-  } catch {
-    return NextResponse.json({ error: 'Error saving track' }, { status: 500 });
+  } catch (error) {
+    return toNextError(error, 'Error saving track');
   }
 }
 
@@ -70,7 +44,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return toNextError(unauthorized());
   }
 
   try {
@@ -83,21 +57,10 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get all tracks for the authenticated user
-    const tracks = await prisma.track.findMany({
-      where: {
-        userId: user.id,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const tracks = await listTracksForUser(user.id);
 
     return NextResponse.json({ tracks }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: 'Error fetching tracks' },
-      { status: 500 },
-    );
+  } catch (error) {
+    return toNextError(error, 'Error fetching tracks');
   }
 }

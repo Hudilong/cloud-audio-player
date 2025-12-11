@@ -11,6 +11,7 @@ import { Track } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { PlayerContext } from '@/context/PlayerContext';
+import { uploadCoverVariantsWithBlurhash } from '@services/storage/coverService';
 import TrackListView from '../../components/TrackListView';
 import PlaylistPickerModal from '../../components/PlaylistPickerModal';
 import FileUploadForm from '../../components/FileUploadForm';
@@ -22,8 +23,6 @@ import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import { useTrackUpload } from '../hooks/useTrackUpload';
 import { getCoverSrc } from '../../utils/getCoverSrc';
 import { readFileAsDataURL } from '../../utils/imageProcessing';
-import { uploadCoverVariants } from '../../utils/coverUpload';
-import { generateBlurhashFromFile } from '../../utils/blurhash';
 
 export default function Library(): JSX.Element {
   const { status } = useSession();
@@ -56,7 +55,6 @@ export default function Library(): JSX.Element {
     defaultPlaylistFilter,
     setPlaylistError,
     reorderPlaylistTracks,
-    reorderingPlaylistId,
     fetchPlaylists,
   } = usePlaylistManager(status);
 
@@ -110,7 +108,6 @@ export default function Library(): JSX.Element {
   });
   const [editCoverFile, setEditCoverFile] = useState<File | null>(null);
   const [editCoverPreview, setEditCoverPreview] = useState<string | null>(null);
-  const [editBlurhash, setEditBlurhash] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -193,7 +190,6 @@ export default function Library(): JSX.Element {
     setEditCoverPreview(
       trackToEdit.imageURL ? getCoverSrc(trackToEdit.imageURL) : null,
     );
-    setEditBlurhash(trackToEdit.imageBlurhash || null);
     setEditError(null);
     setEditModalOpen(true);
   };
@@ -236,8 +232,9 @@ export default function Library(): JSX.Element {
       let imageBlurhash = editingTrack.imageBlurhash || null;
 
       if (editCoverFile) {
-        imageURL = await uploadCoverVariants(editCoverFile);
-        imageBlurhash = await generateBlurhashFromFile(editCoverFile);
+        const result = await uploadCoverVariantsWithBlurhash(editCoverFile);
+        imageURL = result.imageURL;
+        imageBlurhash = result.imageBlurhash;
       }
 
       const payload = {
@@ -283,7 +280,6 @@ export default function Library(): JSX.Element {
       setEditModalOpen(false);
       setEditCoverFile(null);
       setEditCoverPreview(null);
-      setEditBlurhash(null);
       setEditingTrack(null);
     } catch (err) {
       setEditError(
@@ -528,7 +524,6 @@ export default function Library(): JSX.Element {
           setEditingTrack(null);
           setEditCoverFile(null);
           setEditCoverPreview(null);
-          setEditBlurhash(null);
           setEditError(null);
         }}
         title="Edit track"
@@ -616,9 +611,13 @@ export default function Library(): JSX.Element {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="space-y-1 text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="edit-title"
+              className="space-y-1 text-sm font-medium text-textLight dark:text-textDark"
+            >
               Title
               <input
+                id="edit-title"
                 name="title"
                 value={editForm.title}
                 onChange={handleEditInputChange}
@@ -626,9 +625,13 @@ export default function Library(): JSX.Element {
                 placeholder="Track title"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="edit-artist"
+              className="space-y-1 text-sm font-medium text-textLight dark:text-textDark"
+            >
               Artist
               <input
+                id="edit-artist"
                 name="artist"
                 value={editForm.artist}
                 onChange={handleEditInputChange}
@@ -636,9 +639,13 @@ export default function Library(): JSX.Element {
                 placeholder="Artist"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="edit-album"
+              className="space-y-1 text-sm font-medium text-textLight dark:text-textDark"
+            >
               Album
               <input
+                id="edit-album"
                 name="album"
                 value={editForm.album}
                 onChange={handleEditInputChange}
@@ -646,9 +653,13 @@ export default function Library(): JSX.Element {
                 placeholder="Album"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium text-textLight dark:text-textDark">
+            <label
+              htmlFor="edit-genre"
+              className="space-y-1 text-sm font-medium text-textLight dark:text-textDark"
+            >
               Genre
               <input
+                id="edit-genre"
                 name="genre"
                 value={editForm.genre}
                 onChange={handleEditInputChange}

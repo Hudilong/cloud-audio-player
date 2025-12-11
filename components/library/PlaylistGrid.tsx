@@ -1,7 +1,7 @@
-import Image from 'next/image';
 import { FiPlus } from 'react-icons/fi';
 import { PlaylistWithTracks } from '../../types/playlist';
-import { getCoverProps } from '../../utils/getCoverSrc';
+import { TrackWithCover } from '../../types/trackWithCover';
+import CoverImage from '../ui/CoverImage';
 
 interface PlaylistGridProps {
   playlists: PlaylistWithTracks[];
@@ -41,10 +41,9 @@ export default function PlaylistGrid({
         const orderedTracks = [...playlist.playlistTracks].sort(
           (a, b) => a.position - b.position,
         );
-        const cover = getCoverProps(
-          (orderedTracks[0]?.track as any)?.imageURL || null,
-          (orderedTracks[0]?.track as any)?.imageBlurhash || null,
-        );
+        const firstTrack = orderedTracks[0]?.track as
+          | TrackWithCover
+          | undefined;
         const trackCount = orderedTracks.length;
 
         return (
@@ -61,13 +60,13 @@ export default function PlaylistGrid({
             className="rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark backdrop-blur p-4 shadow-soft hover:shadow-glass flex flex-col gap-3 cursor-pointer"
           >
             <div className="relative overflow-hidden rounded-xl border border-borderLight dark:border-borderDark h-32 bg-panelLightAlt dark:bg-panelDarkAlt">
-              <Image
-                src={cover.src}
-                alt={`${playlist.name} cover`}
+              <CoverImage
+                track={firstTrack}
+                width={128}
+                height={128}
                 fill
+                alt={`${playlist.name} cover`}
                 className="object-cover"
-                placeholder={cover.placeholder as any}
-                blurDataURL={cover.blurDataURL}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent" />
               <div className="absolute bottom-2 left-2 text-xs font-semibold px-3 py-1 rounded-full bg-panelLight dark:bg-panelDark text-ink dark:text-textDark">
