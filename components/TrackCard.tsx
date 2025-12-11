@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { Track } from '@prisma/client';
 import { formatTime } from '../utils/formatTime';
 import ContextualMenu from './ContextualMenu';
 import { Item } from '../types/item';
+import { TrackWithCover } from '../types/trackWithCover';
+import CoverImage from './ui/CoverImage';
 
 interface TrackCardProps {
-  track: Track;
+  track: TrackWithCover;
   onSelect: (track: Track) => void;
   onDelete: (track: Track) => void;
   onAddToQueue: (track: Track) => void;
@@ -55,10 +55,10 @@ export default function TrackCard({
           }
         }}
       >
-        <Image
+        <CoverImage
+          track={track}
           width={176}
           height={176}
-          src={track.imageURL || '/default-thumbnail.png'}
           alt={track.title || 'thumbnail'}
           className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
         />

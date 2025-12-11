@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { uploadCoverVariantsWithBlurhash } from '@services/storage/coverService';
 import { parseBlob } from 'music-metadata-browser';
 import { TrackInfo } from '../../types';
+import { readFileAsDataURL } from '../../utils/imageProcessing';
 
 interface UseTrackUploadOptions {
   onSuccess?: () => void;
@@ -14,7 +16,8 @@ const emptyTrackInfo: TrackInfo = {
   album: '',
   duration: 0,
   genre: '',
-  imageURL: '',
+  imageURL: null,
+  imageBlurhash: null,
 };
 
 export function useTrackUpload(options: UseTrackUploadOptions = {}) {
@@ -23,11 +26,15 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
   const [trackInfo, setTrackInfo] = useState<TrackInfo>(emptyTrackInfo);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const resetUploadForm = useCallback(() => {
     setSelectedFile(null);
     setTrackInfo(emptyTrackInfo);
     setUploadError('');
+    setCoverFile(null);
+    setCoverPreview(null);
   }, []);
 
   const openUploadModal = useCallback(() => {
@@ -43,14 +50,28 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
   const extractMetadata = async (file: File): Promise<TrackInfo> => {
     const metadataResult = await parseBlob(file);
     const durationInSeconds = metadataResult.format.duration || 0;
-    return {
+    const info: TrackInfo = {
       title: metadataResult.common.title || '',
       artist: metadataResult.common.artist || '',
       album: metadataResult.common.album || '',
       imageURL: null,
+      imageBlurhash: null,
       genre: metadataResult.common.genre?.[0] || '',
       duration: Math.floor(durationInSeconds),
     };
+
+    const coverPicture = metadataResult.common.picture?.[0];
+    if (coverPicture) {
+      const mime = coverPicture.format || 'image/jpeg';
+      const embeddedFile = new File([coverPicture.data], 'embedded-cover', {
+        type: mime,
+      });
+      const preview = await readFileAsDataURL(embeddedFile);
+      setCoverFile(embeddedFile);
+      setCoverPreview(preview);
+    }
+
+    return info;
   };
 
   const handleFileChange = useCallback(
@@ -76,6 +97,27 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
     [],
   );
 
+  const handleCoverChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Cover must be an image file.');
+        return;
+      }
+      const preview = await readFileAsDataURL(file);
+      setCoverFile(file);
+      setCoverPreview(preview);
+      setUploadError('');
+    },
+    [],
+  );
+
+  const clearCover = useCallback(() => {
+    setCoverFile(null);
+    setCoverPreview(null);
+  }, []);
+
   const handleUploadSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -88,6 +130,15 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
+          let imageURL: string | null = null;
+          let imageBlurhash: string | null = null;
+
+          if (coverFile) {
+            const result = await uploadCoverVariantsWithBlurhash(coverFile);
+            imageURL = result.imageURL;
+            imageBlurhash = result.imageBlurhash;
+          }
+
           const base64Buffer = reader.result?.toString().split(',')[1];
           if (!base64Buffer) throw new Error('Unable to read file');
 
@@ -116,6 +167,8 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
             body: JSON.stringify({
               ...trackInfo,
               s3Key: key,
+              imageURL,
+              imageBlurhash,
             }),
             headers: { 'Content-Type': 'application/json' },
           });
@@ -141,7 +194,7 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
 
       reader.readAsDataURL(selectedFile);
     },
-    [closeUploadModal, options, selectedFile, trackInfo],
+    [closeUploadModal, coverFile, options, selectedFile, trackInfo],
   );
 
   return {
@@ -150,10 +203,14 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
     trackInfo,
     uploading,
     uploadError,
+    coverFile,
+    coverPreview,
     openUploadModal,
     closeUploadModal,
     handleFileChange,
     handleInputChange,
+    handleCoverChange,
+    clearCover,
     handleUploadSubmit,
     resetUploadForm,
     setUploadError,

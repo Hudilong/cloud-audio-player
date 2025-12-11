@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@utils/prisma';
 import bcrypt from 'bcrypt';
 import { validateEmail } from '@utils/validateEmail';
+import { seedDemoTracksForUser } from '@utils/demoTracks';
 
 export async function POST(request: Request) {
   const { email, password, name } = await request.json();
@@ -22,13 +23,20 @@ export async function POST(request: Request) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email,
       name,
       password: hashedPassword,
     },
   });
+
+  // Seed demo tracks for this new user (best-effort)
+  try {
+    await seedDemoTracksForUser(user.id);
+  } catch {
+    // ignore seeding errors
+  }
 
   return NextResponse.json(
     { message: 'User registered successfully' },

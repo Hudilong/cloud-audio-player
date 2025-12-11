@@ -71,6 +71,32 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Environment examples
+
+- Copy `.env.example` to `.env` and fill in secrets. `NEXT_PUBLIC_BUCKET_URL` should point to the public HTTP base for your bucket (MinIO: `http://localhost:9000/streaming-bucket`).
+- For Railway or other S3-compatible storage, reuse the same bucket for audio and images; the app signs requests per object.
+
+### Seeding and demo tracks
+
+- `pnpm seed` creates a dev user (`SEED_USER_EMAIL` / `SEED_USER_PASSWORD`) and seeds `SEED_TRACK_COUNT` placeholder tracks that point to `SEED_AUDIO_S3_KEY`.
+- To ship demo content for new accounts, set `DEMO_TRACK_1_KEY` / `DEMO_TRACK_2_KEY` (or a `DEMO_TRACKS` JSON array) to real object keys already uploaded to your bucket. Blurhash and cover URLs are optional but recommended.
+
+### Testing
+
+- Unit/integration (includes the happy-path upload → reorder → resume flow): `pnpm test`
+- Lint: `pnpm lint`
+- Type/lint formatting: `pnpm check`
+
+### Code organization
+
+- `app/`: routes/layouts and UI entry points; keep route handlers thin (auth/validation/response shaping) and delegate to services.
+- `components/`: shared UI components (mark client components with `'use client'` where needed).
+- `services/`: domain logic (playback, playlist reorder, track CRUD, storage helpers). Prisma calls live here so routes stay light.
+- `utils/`: cross-cutting helpers (validation, blurhash/image processing, auth options).
+- `types/`: shared type exports.
+
+This keeps a simple “route → service → Prisma” flow that’s easy to test and evolve.
+
 ## Deployment
 
 Build and run wherever you can host a Next.js app (container platform, VM, or managed Node host):

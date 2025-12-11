@@ -165,4 +165,34 @@ describe('PlayerContext', () => {
     expect(result.current.currentTrackIndex).toBe(1);
     expect(result.current.isPlaying).toBe(false);
   });
+
+  it('reorders, removes, and clears upcoming tracks', () => {
+    const trackA = buildTrack({ id: 'a' });
+    const trackB = buildTrack({ id: 'b' });
+    const trackC = buildTrack({ id: 'c' });
+
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      result.current.setQueue([trackA, trackB, trackC]);
+      result.current.setCurrentTrackIndex(0);
+    });
+
+    act(() => {
+      result.current.reorderUpcoming(['c', 'b']);
+    });
+    expect(result.current.queue.map((t) => t.id)).toEqual(['a', 'c', 'b']);
+
+    act(() => {
+      result.current.removeUpcoming('c');
+    });
+    expect(result.current.queue.map((t) => t.id)).toEqual(['a', 'b']);
+
+    act(() => {
+      result.current.clearUpcoming();
+    });
+    expect(result.current.queue.map((t) => t.id)).toEqual(['a']);
+  });
 });

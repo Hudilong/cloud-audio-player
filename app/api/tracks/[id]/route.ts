@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@utils/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../utils/authOptions';
+import { parseJsonBody } from '@utils/validation';
+import { authOptions } from '@utils/authOptions';
+import { trackUpdateSchema } from '@utils/apiSchemas';
+import {
+  deleteTrackForUser,
+  getTrackForUser,
+  updateTrackForUser,
+} from '@services/track';
+import prisma from '@utils/prisma';
+import { toNextError, unauthorized } from '@utils/httpError';
 
 export async function PUT(
   request: NextRequest,
@@ -10,17 +18,11 @@ export async function PUT(
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return toNextError(unauthorized());
   }
 
-  const { title, artist, album, duration, s3Key } = await request.json();
-
-  if (!title || !artist || !duration || !s3Key) {
-    return NextResponse.json(
-      { error: 'Missing required fields' },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, trackUpdateSchema);
+  if (!parsed.success) return parsed.error;
 
   try {
     const user = await prisma.user.findUnique({
@@ -28,31 +30,12 @@ export async function PUT(
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return toNextError(unauthorized());
     }
 
     const { id } = params;
 
-    const track = await prisma.track.findFirst({
-      where: { id, userId: user.id },
-    });
-
-    if (!track) {
-      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
-    }
-
-    // Save the audio metadata and file URL to the database
-    const updatedTrack = await prisma.track.update({
-      data: {
-        title,
-        artist,
-        album,
-        duration, // Duration in seconds
-        s3Key,
-        userId: user.id,
-      },
-      where: { id },
-    });
+    const updatedTrack = await updateTrackForUser(user.id, id, parsed.data);
 
     return NextResponse.json(
       {
@@ -61,8 +44,8 @@ export async function PUT(
       },
       { status: 200 },
     );
-  } catch {
-    return NextResponse.json({ error: 'Error saving track' }, { status: 500 });
+  } catch (error) {
+    return toNextError(error, 'Error saving track');
   }
 }
 
@@ -73,7 +56,7 @@ export async function GET(
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return toNextError(unauthorized());
   }
 
   try {
@@ -82,28 +65,16 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return toNextError(unauthorized());
     }
 
     const { id } = params;
 
-    const track = await prisma.track.findFirst({
-      where: {
-        id,
-        userId: user.id,
-      },
-    });
-
-    if (!track) {
-      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
-    }
+    const track = await getTrackForUser(user.id, id);
 
     return NextResponse.json({ track }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: 'Error fetching track' },
-      { status: 500 },
-    );
+  } catch (error) {
+    return toNextError(error, 'Error fetching track');
   }
 }
 
@@ -114,7 +85,7 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return toNextError(unauthorized());
   }
 
   try {
@@ -123,28 +94,12 @@ export async function DELETE(
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return toNextError(unauthorized());
     }
 
     const { id } = params;
 
-    const track = await prisma.track.findFirst({
-      where: { id, userId: user.id },
-    });
-
-    if (!track) {
-      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.playlistTrack.deleteMany({
-        where: { trackId: id },
-      });
-
-      await tx.track.delete({
-        where: { id },
-      });
-    });
+    const track = await deleteTrackForUser(user.id, id);
 
     return NextResponse.json(
       {
@@ -153,10 +108,7 @@ export async function DELETE(
       },
       { status: 200 },
     );
-  } catch {
-    return NextResponse.json(
-      { error: 'Error deleting track' },
-      { status: 500 },
-    );
+  } catch (error) {
+    return toNextError(error, 'Error deleting track');
   }
 }
