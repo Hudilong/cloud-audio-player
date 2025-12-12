@@ -150,10 +150,12 @@ export default function Library(): JSX.Element {
   const [editCoverPreview, setEditCoverPreview] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login');
+      setRedirecting(true);
+      router.replace('/login');
     }
   }, [status, router]);
 
@@ -569,6 +571,16 @@ export default function Library(): JSX.Element {
   const emptyMessage = activePlaylistFilter.id
     ? 'No tracks in this playlist yet.'
     : 'No songs yet. Upload your first track to get started.';
+
+  if (status !== 'authenticated') {
+    return (
+      <div className="w-full pt-[4.5rem] sm:pt-10 px-4 sm:px-6 lg:px-8 pb-32 sm:pb-20 max-w-6xl mx-auto">
+        {redirecting ? null : (
+          <div className="text-sm text-muted">Loading your library...</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full pt-[4.5rem] sm:pt-10 px-4 sm:px-6 lg:px-8 pb-32 sm:pb-20 max-w-6xl mx-auto scrollbar-soft">

@@ -28,7 +28,7 @@ interface TrackItemProps {
   isDragging?: boolean;
 }
 
-export default function TrackItem({
+function TrackItem({
   track,
   onSelect,
   onDelete,
@@ -167,3 +167,8 @@ export default function TrackItem({
     </li>
   );
 }
+
+const MemoizedTrackItem = React.memo(TrackItem);
+
+export { MemoizedTrackItem as TrackItem };
+export default MemoizedTrackItem;

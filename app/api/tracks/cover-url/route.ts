@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true },
   });
 
   if (!user) {
@@ -56,21 +57,32 @@ export async function GET(request: NextRequest) {
   let imageKey = keyParam || '';
 
   if (trackId) {
-    const track = await prisma.track.findFirst({
-      where: { id: trackId, userId: user.id },
+    const track = await prisma.track.findUnique({
+      where: { id: trackId },
+      select: { imageURL: true, userId: true, isFeatured: true },
     });
 
     if (!track || !track.imageURL) {
       return NextResponse.json({ error: 'Cover not found' }, { status: 404 });
     }
 
+    const ownsTrack = track.userId === user.id;
+    if (!ownsTrack && !track.isFeatured && user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     imageKey = track.imageURL;
   } else if (keyParam) {
     const trackForKey = await prisma.track.findFirst({
-      where: { imageURL: keyParam, userId: user.id },
+      where: { imageURL: keyParam },
+      select: { id: true, userId: true, isFeatured: true },
     });
     if (!trackForKey) {
       return NextResponse.json({ error: 'Cover not found' }, { status: 404 });
+    }
+    const ownsTrack = trackForKey.userId === user.id;
+    if (!ownsTrack && !trackForKey.isFeatured && user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getCoverProps } from '../../utils/getCoverSrc';
 import { TrackWithCover } from '../../types/trackWithCover';
 
@@ -16,6 +17,14 @@ type CoverImageProps = {
   sizes?: string;
 };
 
+const coverCache = new Map<string, string>();
+
+function cacheBust(url: string) {
+  if (!url) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}cb=${Date.now()}`;
+}
+
 export default function CoverImage({
   track,
   imageURL,
@@ -27,9 +36,29 @@ export default function CoverImage({
   fill = false,
   sizes,
 }: CoverImageProps) {
-  const source = track
-    ? getCoverProps(track.imageURL, track.imageBlurhash)
-    : getCoverProps(imageURL, imageBlurhash);
+  const source = useMemo(
+    () =>
+      track
+        ? getCoverProps(track.imageURL, track.imageBlurhash)
+        : getCoverProps(imageURL, imageBlurhash),
+    [track, imageURL, imageBlurhash],
+  );
+
+  const cacheKey = useMemo(() => {
+    if (track?.id) {
+      let updated: number | string = '';
+      if (track.updatedAt instanceof Date) {
+        updated = track.updatedAt.getTime();
+      } else if (track.updatedAt) {
+        updated = new Date(track.updatedAt).getTime();
+      }
+      return `${track.id}-${updated}`;
+    }
+    return source.src;
+  }, [source.src, track?.id, track?.updatedAt]);
+
+  const [currentSrc, setCurrentSrc] = useState(source.src);
+  const [hasRetried, setHasRetried] = useState(false);
 
   const placeholder = source.placeholder === 'blur' ? 'blur' : 'empty';
   const blurDataURL =
@@ -37,17 +66,44 @@ export default function CoverImage({
       ? source.blurDataURL
       : undefined;
 
+  useEffect(() => {
+    setHasRetried(false);
+    setCurrentSrc((prev) => {
+      const cached = cacheKey ? coverCache.get(cacheKey) : null;
+      if (cached && cached !== prev) return cached;
+      return source.src;
+    });
+  }, [cacheKey, source.src]);
+
+  const handleLoad = () => {
+    if (cacheKey) {
+      coverCache.set(cacheKey, currentSrc);
+    }
+  };
+
+  const handleError = () => {
+    if (hasRetried) return;
+    const refreshed = cacheBust(source.src);
+    setHasRetried(true);
+    setCurrentSrc(refreshed);
+    if (cacheKey) {
+      coverCache.set(cacheKey, refreshed);
+    }
+  };
+
   return (
     <Image
       width={fill ? undefined : width}
       height={fill ? undefined : height}
       fill={fill || undefined}
       sizes={sizes}
-      src={source.src}
+      src={currentSrc}
       alt={alt}
       className={className}
       placeholder={placeholder}
       blurDataURL={blurDataURL}
+      onError={handleError}
+      onLoad={handleLoad}
     />
   );
 }
