@@ -76,10 +76,15 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 - Copy `.env.example` to `.env` and fill in secrets. `NEXT_PUBLIC_BUCKET_URL` should point to the public HTTP base for your bucket (MinIO: `http://localhost:9000/streaming-bucket`).
 - For Railway or other S3-compatible storage, reuse the same bucket for audio and images; the app signs requests per object.
 
-### Seeding and demo tracks
+### Seeding
 
-- `pnpm seed` creates a dev user (`SEED_USER_EMAIL` / `SEED_USER_PASSWORD`) and seeds `SEED_TRACK_COUNT` placeholder tracks that point to `SEED_AUDIO_S3_KEY`.
-- To ship demo content for new accounts, set `DEMO_TRACK_1_KEY` / `DEMO_TRACK_2_KEY` (or a `DEMO_TRACKS` JSON array) to real object keys already uploaded to your bucket. Blurhash and cover URLs are optional but recommended.
+- `pnpm seed` always ensures an admin user (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`). In non-production it also ensures a dev user (`SEED_USER_EMAIL` / `SEED_USER_PASSWORD`) and seeds `SEED_TRACK_COUNT` placeholder tracks using `SEED_AUDIO_S3_KEY` or a fake key (`SEED_FAKE_AUDIO_S3_KEY`, default `missing/dev-audio.mp3`) so you can click around without uploading.
+
+### Limits and safety
+
+- `MAX_AUDIO_UPLOAD_BYTES` (default 25MB), `MAX_COVER_UPLOAD_BYTES` (8MB), `MAX_TRACK_DURATION_SECONDS` (15 minutes).
+- `DAILY_TRACK_UPLOAD_LIMIT` (default 25) and `TOTAL_TRACK_UPLOAD_LIMIT` (250) apply to non-admin users.
+- Auth and upload endpoints are rate-limited in-memory per instance; tune the limits in `middleware.ts` and `utils/limits.ts` if needed.
 
 ### Testing
 
@@ -91,9 +96,10 @@ A **full-stack cloud audio player** built with **Next.js** using **app routes** 
 
 - `app/`: routes/layouts and UI entry points; keep route handlers thin (auth/validation/response shaping) and delegate to services.
 - `components/`: shared UI components (mark client components with `'use client'` where needed).
-- `services/`: domain logic (playback, playlist reorder, track CRUD, storage helpers). Prisma calls live here so routes stay light.
+- `services/`: domain logic and clients (playback, playlist reorder, track CRUD via `tracksClient`, upload helpers, storage helpers). Prisma calls live here so routes stay light.
 - `utils/`: cross-cutting helpers (validation, blurhash/image processing, auth options).
 - `types/`: shared type exports.
+- `app/hooks/`: UI/business hooks (`useLibraryPlayback`, `useTrackDeletion`, `useLibraryTracks`, `useLibraryViewState`, etc.) keep pages thin and compose services.
 
 This keeps a simple “route → service → Prisma” flow that’s easy to test and evolve.
 

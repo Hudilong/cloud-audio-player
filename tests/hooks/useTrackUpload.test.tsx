@@ -68,6 +68,7 @@ describe('useTrackUpload', () => {
       genre: 'Indie',
       imageURL: null,
       imageBlurhash: null,
+      isFeatured: false,
     });
     expect(result.current.uploadError).toBe('');
   });

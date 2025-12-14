@@ -27,6 +27,7 @@ export async function PUT(
   try {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { id: true, role: true },
     });
 
     if (!user) {
@@ -35,7 +36,13 @@ export async function PUT(
 
     const { id } = params;
 
-    const updatedTrack = await updateTrackForUser(user.id, id, parsed.data);
+    const updatedTrack =
+      user.role === 'ADMIN'
+        ? await prisma.track.update({
+            where: { id },
+            data: parsed.data,
+          })
+        : await updateTrackForUser(user.id, id, parsed.data);
 
     return NextResponse.json(
       {
@@ -62,6 +69,7 @@ export async function GET(
   try {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { id: true, role: true },
     });
 
     if (!user) {
@@ -70,7 +78,10 @@ export async function GET(
 
     const { id } = params;
 
-    const track = await getTrackForUser(user.id, id);
+    const track =
+      user.role === 'ADMIN'
+        ? await prisma.track.findUnique({ where: { id } })
+        : await getTrackForUser(user.id, id);
 
     return NextResponse.json({ track }, { status: 200 });
   } catch (error) {

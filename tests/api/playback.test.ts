@@ -6,12 +6,14 @@ const {
   playbackFindUnique,
   playbackUpsert,
   trackFindFirst,
+  trackFindUnique,
   userFindUnique,
 } = vi.hoisted(() => ({
   getServerSessionMock: vi.fn(),
   playbackFindUnique: vi.fn(),
   playbackUpsert: vi.fn(),
   trackFindFirst: vi.fn(),
+  trackFindUnique: vi.fn(),
   userFindUnique: vi.fn(),
 }));
 
@@ -28,7 +30,11 @@ vi.mock('@utils/prisma', () => ({
       findUnique: playbackFindUnique,
       upsert: playbackUpsert,
     },
-    track: { findFirst: trackFindFirst, findMany: vi.fn().mockResolvedValue([]) },
+    track: {
+      findFirst: trackFindFirst,
+      findUnique: trackFindUnique,
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   },
 }));
 
@@ -44,8 +50,12 @@ describe('api/playback', () => {
     getServerSessionMock.mockResolvedValue({
       user: { email: 'test@example.com', id: 'user-1' },
     });
-    userFindUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+    userFindUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'test@example.com',
+    });
     trackFindFirst.mockResolvedValue({ id: 'track-1', userId: 'user-1' });
+    trackFindUnique.mockResolvedValue({ id: 'track-1', userId: 'user-1' });
     playbackFindUnique.mockResolvedValue({
       trackId: 'track-1',
       track: { id: 'track-1' },
@@ -73,6 +83,7 @@ describe('api/playback', () => {
 
   it('upserts playback state on POST', async () => {
     trackFindFirst.mockResolvedValue({ id: 'track-1', userId: 'user-1' });
+    trackFindUnique.mockResolvedValue({ id: 'track-1', userId: 'user-1' });
     playbackUpsert.mockResolvedValue({});
 
     const res = await POST(

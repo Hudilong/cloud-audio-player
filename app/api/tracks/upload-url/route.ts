@@ -5,6 +5,11 @@ import { fileTypeFromBuffer } from 'file-type';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { authOptions } from '@utils/authOptions';
+import prisma from '@utils/prisma';
+import { toNextError } from '@utils/httpError';
+import { applyRateLimit, rateLimitHeaders } from '@utils/rateLimiter';
+import { assertTrackUploadQuota } from '@services/quota';
+import { AUDIO_UPLOAD_LIMIT_BYTES, formatBytes } from '@utils/limits';
 
 const s3 = new S3Client({
   region: process.env.BUCKET_REGION!,
@@ -23,7 +28,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { email: session.user?.email ?? '' },
+    select: { id: true, role: true },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateResult = applyRateLimit(
+    `upload-user:${user.id}`,
+    50,
+    15 * 60 * 1000,
+  );
+  if (!rateResult.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many upload attempts. Please try again later.',
+        code: 'UPLOAD_RATE_LIMIT',
+      },
+      { status: 429, headers: rateLimitHeaders(rateResult) },
+    );
+  }
+
   const { name, type, fileBuffer } = await request.json();
+
+  if (!fileBuffer || typeof fileBuffer !== 'string') {
+    return NextResponse.json(
+      { error: 'Invalid file payload' },
+      { status: 400 },
+    );
+  }
 
   // Validate file content
   const fileTypeInfo = await fileTypeFromBuffer(
@@ -32,14 +68,38 @@ export async function POST(request: NextRequest) {
   const allowedMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
 
   if (!fileTypeInfo || !allowedMimeTypes.includes(fileTypeInfo.mime)) {
-    return NextResponse.json({ error: 'Invalid file type.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid file type.', code: 'UPLOAD_TYPE_INVALID' },
+      { status: 400 },
+    );
   }
 
   if (!name || !type) {
     return NextResponse.json(
-      { error: 'Missing required parameters' },
+      { error: 'Missing required parameters', code: 'BAD_REQUEST' },
       { status: 400 },
     );
+  }
+
+  const fileSizeBytes = Buffer.byteLength(fileBuffer || '', 'base64');
+  if (fileSizeBytes > AUDIO_UPLOAD_LIMIT_BYTES) {
+    return NextResponse.json(
+      {
+        error: `File too large. Max allowed is ${formatBytes(
+          AUDIO_UPLOAD_LIMIT_BYTES,
+        )}.`,
+        code: 'UPLOAD_SIZE_EXCEEDED',
+      },
+      { status: 413 },
+    );
+  }
+
+  try {
+    if (user.role !== 'ADMIN') {
+      await assertTrackUploadQuota(user.id);
+    }
+  } catch (error) {
+    return toNextError(error, 'Upload limit reached');
   }
 
   const fileExtension = name.substring(name.lastIndexOf('.'));

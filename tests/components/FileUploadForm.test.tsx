@@ -1,6 +1,6 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import FileUploadForm from '../../components/FileUploadForm';
+import FileUploadForm from '@components/forms/FileUploadForm';
 import type { TrackInfo } from '../../types';
 
 const baseMetadata: TrackInfo = {

@@ -49,16 +49,19 @@ export async function POST(
       );
     }
 
-    const track = await prisma.track.findFirst({
-      where: { id: trackId, userId: user.id },
+    const track = await prisma.track.findUnique({
+      where: { id: trackId },
     });
 
-    if (!track) {
+    if (!track || (track.userId !== user.id && !track.isFeatured)) {
       return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     const existingTrack = await prisma.playlistTrack.findFirst({
-      where: { playlistId: params.id, trackId },
+      where: {
+        playlistId: params.id,
+        trackId,
+      },
     });
 
     if (existingTrack) {
@@ -77,7 +80,7 @@ export async function POST(
       data: {
         playlistId: params.id,
         trackId,
-        position: (maxPosition?.position ?? -1) + 1,
+        position: (Number(maxPosition?.position) || 0) + 100,
       },
     });
 
@@ -135,7 +138,10 @@ export async function DELETE(
     }
 
     await prisma.playlistTrack.deleteMany({
-      where: { playlistId: params.id, trackId },
+      where: {
+        playlistId: params.id,
+        trackId,
+      },
     });
 
     const remainingTracks = await prisma.playlistTrack.findMany({
@@ -147,7 +153,7 @@ export async function DELETE(
       remainingTracks.map((playlistTrack, index) =>
         prisma.playlistTrack.update({
           where: { id: playlistTrack.id },
-          data: { position: index },
+          data: { position: (index + 1) * 100 },
         }),
       ),
     );

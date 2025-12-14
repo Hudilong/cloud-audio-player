@@ -22,6 +22,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { email: session.user?.email ?? '' },
+    select: { id: true, role: true },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
@@ -35,6 +44,13 @@ export async function GET(request: NextRequest) {
 
   if (!audio) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 });
+  }
+
+  const isOwner = audio.userId === user.id;
+  const isAdmin = user.role === 'ADMIN';
+
+  if (!isOwner && !isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const coverKey =

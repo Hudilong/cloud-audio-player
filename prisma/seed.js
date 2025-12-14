@@ -4,95 +4,75 @@ const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 function parseNumber(value, fallback) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
 }
 
-function getDemoTracks() {
-  if (process.env.DEMO_TRACKS) {
-    try {
-      const parsed = JSON.parse(process.env.DEMO_TRACKS);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn('DEMO_TRACKS is not valid JSON; skipping');
-    }
-  }
+async function ensureUser(email, name, password, role = 'USER') {
+  let user = await prisma.user.findUnique({ where: { email } });
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const track1Key = process.env.DEMO_TRACK_1_KEY;
-  const track2Key = process.env.DEMO_TRACK_2_KEY;
-
-  const tracks = [];
-  if (track1Key) {
-    tracks.push({
-      title: process.env.DEMO_TRACK_1_TITLE || 'Demo Track 1',
-      artist: process.env.DEMO_TRACK_1_ARTIST || 'Demo Artist 1',
-      album: process.env.DEMO_TRACK_1_ALBUM || 'Demo Album',
-      genre: process.env.DEMO_TRACK_1_GENRE || 'Demo',
-      duration: parseNumber(process.env.DEMO_TRACK_1_DURATION, 180),
-      s3Key: track1Key,
-      imageURL: process.env.DEMO_TRACK_1_IMAGE_URL || null,
-      imageBlurhash: process.env.DEMO_TRACK_1_IMAGE_BLURHASH || null,
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        role,
+      },
     });
+    console.log(`Created ${role.toLowerCase()} user ${email}`);
+    return user;
   }
-  if (track2Key) {
-    tracks.push({
-      title: process.env.DEMO_TRACK_2_TITLE || 'Demo Track 2',
-      artist: process.env.DEMO_TRACK_2_ARTIST || 'Demo Artist 2',
-      album: process.env.DEMO_TRACK_2_ALBUM || 'Demo Album',
-      genre: process.env.DEMO_TRACK_2_GENRE || 'Demo',
-      duration: parseNumber(process.env.DEMO_TRACK_2_DURATION, 200),
-      s3Key: track2Key,
-      imageURL: process.env.DEMO_TRACK_2_IMAGE_URL || null,
-      imageBlurhash: process.env.DEMO_TRACK_2_IMAGE_BLURHASH || null,
+
+  if (!user.password) {
+    user = await prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword },
     });
+    console.log(`Updated password for ${email}`);
   }
 
-  return tracks;
-}
-
-async function seedDemoTracksForUser(userId) {
-  const demoTracks = getDemoTracks();
-  if (!demoTracks.length) return;
-
-  const existing = await prisma.track.findMany({
-    where: { userId, s3Key: { in: demoTracks.map((t) => t.s3Key) } },
-    select: { s3Key: true },
-  });
-  const existingKeys = new Set(existing.map((t) => t.s3Key));
-
-  const toCreate = demoTracks
-    .filter((track) => !existingKeys.has(track.s3Key))
-    .map((track) => ({
-      ...track,
-      userId,
-    }));
-
-  if (toCreate.length) {
-    await prisma.track.createMany({ data: toCreate });
+  if (user.role !== role) {
+    user = await prisma.user.update({
+      where: { email },
+      data: { role },
+    });
+    console.log(`Updated role for ${email} to ${role}`);
   }
+
+  return user;
 }
 
 async function main() {
   const seedEmail = process.env.SEED_USER_EMAIL || 'dev@example.com';
   const seedPassword = process.env.SEED_USER_PASSWORD || 'password123';
   const seedAudioKey = process.env.SEED_AUDIO_S3_KEY;
+  const allowFakeAudio =
+    process.env.SEED_ALLOW_FAKE_AUDIO === 'true' || !isProduction;
+  const fakeAudioKey =
+    process.env.SEED_FAKE_AUDIO_S3_KEY || 'missing/dev-audio.mp3';
   const seedTrackCount = parseNumber(process.env.SEED_TRACK_COUNT, 5);
+  const seedAdminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD || 'changeme-admin';
 
-  let user = await prisma.user.findUnique({ where: { email: seedEmail } });
-  if (!user) {
-    const hashedPassword = await bcrypt.hash(seedPassword, 10);
-    user = await prisma.user.create({
-      data: {
-        email: seedEmail,
-        password: hashedPassword,
-        name: 'Dev User',
-      },
-    });
-    console.log(`Created dev user ${seedEmail}`);
+  // Always ensure the admin account exists
+  await ensureUser(seedAdminEmail, 'Admin User', seedAdminPassword, 'ADMIN');
+
+  if (isProduction) {
+    console.log('Production mode: only seeding admin user');
+    return;
   }
 
-  if (seedAudioKey) {
+  const user = await ensureUser(seedEmail, 'Dev User', seedPassword, 'USER');
+
+  const audioKeyForSeeds =
+    seedAudioKey || (allowFakeAudio ? fakeAudioKey : null);
+
+  if (audioKeyForSeeds) {
     for (let i = 1; i <= seedTrackCount; i += 1) {
       const title = `Test ${i}`;
       const artist = `Artist ${i}`;
@@ -107,21 +87,22 @@ async function main() {
             album: 'Dev Album',
             genre: 'Dev',
             duration: 180 + i,
-            s3Key: seedAudioKey,
+            s3Key: audioKeyForSeeds,
             userId: user.id,
           },
         });
       }
     }
-    console.log(`Seeded ${seedTrackCount} test tracks for ${seedEmail}`);
+    console.log(
+      `Seeded ${seedTrackCount} test tracks for ${seedEmail} using ${
+        seedAudioKey ? 'provided' : 'fake'
+      } audio key`,
+    );
   } else {
     console.log(
-      'SEED_AUDIO_S3_KEY not set; skipping test track seeding (set a real s3Key to enable)',
+      'No seed audio configured; set SEED_AUDIO_S3_KEY or SEED_ALLOW_FAKE_AUDIO=true to seed test tracks',
     );
   }
-
-  await seedDemoTracksForUser(user.id);
-  console.log('Seeded demo tracks (if configured) for dev user');
 }
 
 main()

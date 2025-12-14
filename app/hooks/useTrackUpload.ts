@@ -1,13 +1,22 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { uploadCoverVariantsWithBlurhash } from '@services/storage/coverService';
 import { parseBlob } from 'music-metadata-browser';
 import { TrackInfo } from '../../types';
 import { readFileAsDataURL } from '../../utils/imageProcessing';
+import { getFriendlyMessage } from '../../utils/apiError';
+import { useToast } from '../context/ToastContext';
+import {
+  extractEmbeddedCover,
+  requestUploadUrl,
+  saveTrack,
+  uploadCoverAndGetMeta,
+  uploadFileToUrl,
+} from '../../services/trackUpload';
 
 interface UseTrackUploadOptions {
   onSuccess?: () => void;
+  saveEndpoint?: string;
 }
 
 const emptyTrackInfo: TrackInfo = {
@@ -18,9 +27,12 @@ const emptyTrackInfo: TrackInfo = {
   genre: '',
   imageURL: null,
   imageBlurhash: null,
+  isFeatured: false,
 };
 
 export function useTrackUpload(options: UseTrackUploadOptions = {}) {
+  const { onSuccess, saveEndpoint = '/api/tracks' } = options;
+  const { notify } = useToast();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [trackInfo, setTrackInfo] = useState<TrackInfo>(emptyTrackInfo);
@@ -58,19 +70,15 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
       imageBlurhash: null,
       genre: metadataResult.common.genre?.[0] || '',
       duration: Math.floor(durationInSeconds),
+      isFeatured: false,
     };
 
-    const coverPicture = metadataResult.common.picture?.[0];
-    if (coverPicture) {
-      const mime = coverPicture.format || 'image/jpeg';
-      const embeddedFile = new File([coverPicture.data], 'embedded-cover', {
-        type: mime,
-      });
-      const preview = await readFileAsDataURL(embeddedFile);
+    const { embeddedFile, preview } =
+      await extractEmbeddedCover(metadataResult);
+    if (embeddedFile && preview) {
       setCoverFile(embeddedFile);
       setCoverPreview(preview);
     }
-
     return info;
   };
 
@@ -84,10 +92,12 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
         setTrackInfo(metadata);
         setUploadError('');
       } catch {
-        setUploadError('Failed to extract metadata.');
+        const message = 'Failed to extract metadata.';
+        setUploadError(message);
+        notify(message, { variant: 'error' });
       }
     },
-    [],
+    [notify],
   );
 
   const handleInputChange = useCallback(
@@ -127,74 +137,44 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
       }
 
       setUploading(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
+      (async () => {
         try {
-          let imageURL: string | null = null;
-          let imageBlurhash: string | null = null;
-
-          if (coverFile) {
-            const result = await uploadCoverVariantsWithBlurhash(coverFile);
-            imageURL = result.imageURL;
-            imageBlurhash = result.imageBlurhash;
-          }
-
-          const base64Buffer = reader.result?.toString().split(',')[1];
-          if (!base64Buffer) throw new Error('Unable to read file');
-
-          const response = await fetch('/api/tracks/upload-url', {
-            method: 'POST',
-            body: JSON.stringify({
-              name: selectedFile.name,
-              type: selectedFile.type,
-              fileBuffer: base64Buffer,
-            }),
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          const { uploadURL, key, error } = await response.json();
-          if (error) throw new Error(error);
-
-          const uploadResponse = await fetch(uploadURL, {
-            method: 'PUT',
-            body: selectedFile,
-            headers: { 'Content-Type': selectedFile.type },
-          });
-          if (!uploadResponse.ok) throw new Error('Failed to upload file');
-
-          const saveResponse = await fetch('/api/tracks', {
-            method: 'POST',
-            body: JSON.stringify({
+          const coverMeta = await uploadCoverAndGetMeta(coverFile);
+          const { uploadURL, key } = await requestUploadUrl(selectedFile);
+          await uploadFileToUrl(uploadURL, selectedFile);
+          await saveTrack(
+            {
               ...trackInfo,
               s3Key: key,
-              imageURL,
-              imageBlurhash,
-            }),
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (!saveResponse.ok) throw new Error('Failed to save metadata');
+              imageURL: coverMeta.imageURL,
+              imageBlurhash: coverMeta.imageBlurhash,
+            },
+            saveEndpoint,
+          );
 
           closeUploadModal();
-          options.onSuccess?.();
+          onSuccess?.();
         } catch (err) {
-          if (err instanceof Error) {
-            setUploadError(err.message);
-          } else {
-            setUploadError('An unexpected error occurred');
-          }
+          const message =
+            err instanceof Error
+              ? getFriendlyMessage(err)
+              : 'An unexpected error occurred';
+          setUploadError(message);
+          notify(message, { variant: 'error' });
         } finally {
           setUploading(false);
         }
-      };
-
-      reader.onerror = () => {
-        setUploadError('Failed to read file');
-        setUploading(false);
-      };
-
-      reader.readAsDataURL(selectedFile);
+      })();
     },
-    [closeUploadModal, coverFile, options, selectedFile, trackInfo],
+    [
+      closeUploadModal,
+      coverFile,
+      onSuccess,
+      saveEndpoint,
+      selectedFile,
+      trackInfo,
+      notify,
+    ],
   );
 
   return {

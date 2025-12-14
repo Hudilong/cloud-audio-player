@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import { debounce } from '@utils/debounce';
+import { getFriendlyMessage, parseApiError } from '@utils/apiError';
+import { useToast } from '../context/ToastContext';
 
 type RepeatMode = 'off' | 'queue' | 'track';
 
 type Snapshot = {
-  track: Track | null;
+  track: LibraryTrack | null;
   currentTime: number;
   isPlaying: boolean;
-  queue: Track[];
+  queue: LibraryTrack[];
   currentTrackIndex: number;
   volume: number;
   isShuffle: boolean;
@@ -16,6 +18,7 @@ type Snapshot = {
 };
 
 export function usePlaybackSaver(snapshot: Snapshot) {
+  const { notify } = useToast();
   const snapshotRef = useRef<Snapshot>(snapshot);
   const isDirtyRef = useRef(false);
 
@@ -59,25 +62,36 @@ export function usePlaybackSaver(snapshot: Snapshot) {
     if (!isDirtyRef.current) return;
 
     try {
-      await fetch('/api/playback', {
+      const res = await fetch('/api/playback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           trackId: current.track.id,
+          trackKind: current.track.kind,
           position: current.currentTime,
           isPlaying: current.isPlaying,
           volume: current.volume,
           isShuffle: current.isShuffle,
           repeatMode: current.repeatMode,
           currentTrackIndex: current.currentTrackIndex,
-          queueTrackIds: current.queue.map((item) => item.id),
+          queue: current.queue.map((item) => ({
+            id: item.id,
+            kind: item.kind,
+          })),
         }),
       });
+      if (!res.ok) {
+        const apiError = await parseApiError(res);
+        const message = getFriendlyMessage(apiError);
+        notify(message, { variant: 'error' });
+        return;
+      }
+
       isDirtyRef.current = false;
-    } catch {
-      // best-effort persistence; ignore errors
+    } catch (err) {
+      notify(getFriendlyMessage(err as Error), { variant: 'error' });
     }
-  }, []);
+  }, [notify]);
 
   const debouncedPersist = useMemo(() => debounce(persist, 400), [persist]);
 

@@ -42,7 +42,10 @@ describe('api/tracks/cover-url', () => {
     getServerSessionMock.mockResolvedValue({
       user: { email: 'test@example.com' },
     });
-    userFindUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+    userFindUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'test@example.com',
+    });
     trackFindFirst.mockResolvedValue({
       id: 'track-1',
       userId: 'user-1',
@@ -66,7 +69,9 @@ describe('api/tracks/cover-url', () => {
   it('rejects unauthorized', async () => {
     getServerSessionMock.mockResolvedValue(null);
     const res = await GET(
-      new Request('http://localhost/api/tracks/cover-url?trackId=track-1') as any,
+      new Request(
+        'http://localhost/api/tracks/cover-url?trackId=track-1',
+      ) as any,
     );
     expect(res.status).toBe(401);
   });

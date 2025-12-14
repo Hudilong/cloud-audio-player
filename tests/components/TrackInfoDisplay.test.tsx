@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import TrackInfoDisplay from '../../components/TrackInfoDisplay';
+import TrackInfoDisplay from '@components/tracks/TrackInfoDisplay';
 import { PlayerContext } from '@/context/PlayerContext';
 import {
   buildTrack,

@@ -2,7 +2,10 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as createTrack } from '@/api/tracks/route';
 import { PATCH as reorderPlaylist } from '@/api/playlists/[id]/reorder/route';
-import { POST as savePlayback, GET as loadPlayback } from '@/api/playback/route';
+import {
+  POST as savePlayback,
+  GET as loadPlayback,
+} from '@/api/playback/route';
 
 type Track = {
   id: string;
@@ -24,6 +27,8 @@ const {
   trackCreate,
   trackFindMany,
   trackFindFirst,
+  trackFindUnique,
+  trackCount,
   playlistFindFirst,
   playlistTrackUpdate,
   playlistFindUnique,
@@ -36,6 +41,8 @@ const {
   trackCreate: vi.fn(),
   trackFindMany: vi.fn(),
   trackFindFirst: vi.fn(),
+  trackFindUnique: vi.fn(),
+  trackCount: vi.fn(),
   playlistFindFirst: vi.fn(),
   playlistTrackUpdate: vi.fn(),
   playlistFindUnique: vi.fn(),
@@ -58,6 +65,8 @@ vi.mock('@utils/prisma', () => ({
       create: trackCreate,
       findMany: trackFindMany,
       findFirst: trackFindFirst,
+      findUnique: trackFindUnique,
+      count: trackCount,
     },
     playlist: {
       findFirst: playlistFindFirst,
@@ -108,6 +117,7 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     vi.clearAllMocks();
     getServerSessionMock.mockResolvedValue({ user: { email: user.email } });
     userFindUnique.mockResolvedValue(user);
+    trackCount.mockImplementation(async () => tracks.length);
 
     tracks = [
       {
@@ -151,18 +161,32 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     });
     trackFindFirst.mockImplementation(
       async ({ where }: { where: Partial<Track> }) =>
-        tracks.find(
-          (t) => t.id === where.id && t.userId === where.userId,
-        ) || null,
+        tracks.find((t) => t.id === where.id && t.userId === where.userId) ||
+        null,
     );
-    trackFindMany.mockImplementation(
-      async ({ where }: { where: { id?: { in: string[] }; userId: string } }) =>
-        tracks.filter(
-          (t) =>
-            t.userId === where.userId &&
-            (!where.id?.in || where.id.in.includes(t.id)),
-        ),
+    trackFindUnique.mockImplementation(
+      async ({ where }: { where: Partial<Track> }) =>
+        tracks.find((t) => t.id === where.id) || null,
     );
+    trackFindMany.mockImplementation(async ({ where }: { where: any }) => {
+      const ids: string[] = where.id?.in || [];
+      const candidates = tracks.filter(
+        (t) => !ids.length || ids.includes(t.id),
+      );
+      if (Array.isArray(where.OR) && where.OR.length) {
+        return candidates.filter((t) =>
+          where.OR.some(
+            (cond: { userId?: string; isFeatured?: boolean }) =>
+              (cond.userId ? t.userId === cond.userId : false) ||
+              (cond.isFeatured ? Boolean((t as any).isFeatured) : false),
+          ),
+        );
+      }
+      if (where.userId) {
+        return candidates.filter((t) => t.userId === where.userId);
+      }
+      return candidates;
+    });
 
     playlistFindFirst.mockImplementation(async () => ({
       id: 'playlist-1',
@@ -174,7 +198,13 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
       ...data,
     }));
     playlistTrackUpdate.mockImplementation(
-      async ({ where, data }: { where: { id: string }; data: { position: number } }) => {
+      async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: { position: number };
+      }) => {
         const target = playlistTracks.find((pt) => pt.id === where.id);
         if (target) target.position = data.position;
         return target;
@@ -197,13 +227,16 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
         : { ...create, updatedAt: new Date() };
       return playbackState;
     });
-    playbackFindUnique.mockImplementation(async ({ where }: { where: { userId: string } }) => {
-      if (!playbackState || playbackState.userId !== where.userId) return null;
-      return {
-        ...playbackState,
-        track: tracks.find((t) => t.id === playbackState.trackId),
-      };
-    });
+    playbackFindUnique.mockImplementation(
+      async ({ where }: { where: { userId: string } }) => {
+        if (!playbackState || playbackState.userId !== where.userId)
+          return null;
+        return {
+          ...playbackState,
+          track: tracks.find((t) => t.id === playbackState.trackId),
+        };
+      },
+    );
   });
 
   it('walks through upload -> reorder -> resume playback', async () => {
@@ -252,7 +285,12 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     expect(reorderRes.status).toBe(200);
     const reordered = await reorderRes.json();
     const reorderedPlaylist = reordered.playlist as {
-      playlistTracks: { id: string; trackId: string; position: number; track: Track }[];
+      playlistTracks: {
+        id: string;
+        trackId: string;
+        position: number;
+        track: Track;
+      }[];
     };
     expect(reorderedPlaylist.playlistTracks.map((pt) => pt.trackId)).toEqual([
       'track-2',
@@ -264,6 +302,9 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     const resume = await resumeRes.json();
     expect(resume.trackId).toBe('track-2');
     expect(resume.position).toBe(42);
-    expect(resume.queue.map((t: Track) => t.id)).toEqual(['track-1', 'track-2']);
+    expect(resume.queue.map((t: Track) => t.id)).toEqual([
+      'track-1',
+      'track-2',
+    ]);
   });
 });

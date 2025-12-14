@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import Player from '../../components/Player';
+import Player from '@components/player/Player';
 import { PlayerContext } from '@/context/PlayerContext';
 import {
   buildTrack,
@@ -9,7 +9,14 @@ import {
 } from '../helpers/mockPlayerContext';
 
 vi.mock('next/image', () => ({
-  default: ({ blurDataURL: _blur, placeholder: _ph, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { placeholder?: string; blurDataURL?: string }) => (
+  default: ({
+    blurDataURL: _blur,
+    placeholder: _ph,
+    ...props
+  }: React.ImgHTMLAttributes<HTMLImageElement> & {
+    placeholder?: string;
+    blurDataURL?: string;
+  }) => (
     // eslint-disable-next-line jsx-a11y/alt-text -- alt forwarded
     <img {...props} />
   ),
