@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 function parseNumber(value, fallback) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -49,16 +51,23 @@ async function main() {
   const seedEmail = process.env.SEED_USER_EMAIL || 'dev@example.com';
   const seedPassword = process.env.SEED_USER_PASSWORD || 'password123';
   const seedAudioKey = process.env.SEED_AUDIO_S3_KEY;
-  const allowFakeAudio = process.env.SEED_ALLOW_FAKE_AUDIO === 'true';
+  const allowFakeAudio =
+    process.env.SEED_ALLOW_FAKE_AUDIO === 'true' || !isProduction;
   const fakeAudioKey =
     process.env.SEED_FAKE_AUDIO_S3_KEY || 'missing/dev-audio.mp3';
   const seedTrackCount = parseNumber(process.env.SEED_TRACK_COUNT, 5);
   const seedAdminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
-  const seedAdminPassword =
-    process.env.SEED_ADMIN_PASSWORD || 'changeme-admin';
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD || 'changeme-admin';
+
+  // Always ensure the admin account exists
+  await ensureUser(seedAdminEmail, 'Admin User', seedAdminPassword, 'ADMIN');
+
+  if (isProduction) {
+    console.log('Production mode: only seeding admin user');
+    return;
+  }
 
   const user = await ensureUser(seedEmail, 'Dev User', seedPassword, 'USER');
-  await ensureUser(seedAdminEmail, 'Admin User', seedAdminPassword, 'ADMIN');
 
   const audioKeyForSeeds =
     seedAudioKey || (allowFakeAudio ? fakeAudioKey : null);

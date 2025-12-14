@@ -43,7 +43,7 @@ const toLibraryTrack = (
 ): LibraryTrack => ({
   ...track,
   kind,
-  isFeatured: kind === 'featured' ? true : track.isFeatured ?? false,
+  isFeatured: kind === 'featured' ? true : (track.isFeatured ?? false),
 });
 
 export const parseQueueState = (tracksField: unknown): QueueState => {
@@ -177,10 +177,7 @@ export async function updatePlaybackStateForUser(
     where: { id: trackId },
   });
 
-  if (
-    !audio ||
-    (audio.userId !== userId && !audio.isFeatured)
-  ) {
+  if (!audio || (audio.userId !== userId && !audio.isFeatured)) {
     throw forbidden('Access denied to this track');
   }
 

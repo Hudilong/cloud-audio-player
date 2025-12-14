@@ -6,6 +6,7 @@ import { trackCreateSchema } from '@utils/apiSchemas';
 import { createTrackForUser, listTracksForUser } from '@services/track';
 import { toNextError, unauthorized } from '@utils/httpError';
 import prisma from '@utils/prisma';
+import { assertTrackUploadQuota } from '@services/quota';
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -20,10 +21,15 @@ export async function POST(request: NextRequest) {
   try {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { id: true, role: true },
     });
 
     if (!user) {
       return toNextError(unauthorized());
+    }
+
+    if (user.role !== 'ADMIN') {
+      await assertTrackUploadQuota(user.id);
     }
 
     const track = await createTrackForUser(user.id, parsed.data);
@@ -40,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -48,6 +54,11 @@ export async function GET() {
   }
 
   try {
+    const url = new URL(request.url);
+    const cursor = url.searchParams.get('cursor');
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? Number(limitParam) : undefined;
+
     // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -57,9 +68,12 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const tracks = await listTracksForUser(user.id);
+    const { tracks, nextCursor } = await listTracksForUser(user.id, {
+      cursor,
+      limit,
+    });
 
-    return NextResponse.json({ tracks }, { status: 200 });
+    return NextResponse.json({ tracks, nextCursor }, { status: 200 });
   } catch (error) {
     return toNextError(error, 'Error fetching tracks');
   }

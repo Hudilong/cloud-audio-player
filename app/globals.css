@@ -5,6 +5,7 @@
 :root {
   --background: #f7f7ff;
   --foreground: #0f1024;
+  --scrollbar-width: calc(100vw - 100%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,7 +16,8 @@
 }
 
 html {
-  overflow-y: scroll;
+  overflow-y: scroll !important;
+  padding-right: 0 !important;
   scrollbar-width: thin;
   scrollbar-color: rgba(150, 120, 255, 0.85) rgba(52, 31, 99, 0.75);
 }

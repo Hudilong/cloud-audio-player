@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import CoverImage from '@components/ui/CoverImage';
 import { LibraryTrack } from '@app-types/libraryTrack';
 import { formatTime } from '@utils/formatTime';
+import { getFriendlyMessage, parseApiError } from '@utils/apiError';
 
 const orderTracks = (tracks: LibraryTrack[]) =>
   [...tracks].sort(
@@ -26,10 +27,11 @@ export default function FeaturedAdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/default-tracks');
+      const res = await fetch('/api/featured-tracks');
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to load featured tracks.');
+        const apiError = await parseApiError(res, data);
+        throw new Error(getFriendlyMessage(apiError));
       }
       const normalized: LibraryTrack[] = (data.tracks || []).map(
         (track: LibraryTrack) => ({
@@ -40,9 +42,7 @@ export default function FeaturedAdminPage() {
       );
       setTracks(orderTracks(normalized));
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to load featured tracks.',
-      );
+      setError(getFriendlyMessage(err as Error));
     } finally {
       setLoading(false);
     }
@@ -81,13 +81,20 @@ export default function FeaturedAdminPage() {
 
     setSavingOrder(true);
     try {
-      await fetch('/api/default-tracks/reorder', {
+      const res = await fetch('/api/featured-tracks/reorder', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: withOrder.map((track) => track.id) }),
       });
-    } catch {
-      setError('Failed to persist ordering. Try again.');
+      if (!res.ok) {
+        const apiError = await parseApiError(res);
+        throw new Error(getFriendlyMessage(apiError));
+      }
+    } catch (err) {
+      setError(
+        getFriendlyMessage(err as Error) ||
+          'Failed to persist ordering. Try again.',
+      );
       setTracks(orderTracks(tracks));
     } finally {
       setSavingOrder(false);
@@ -97,20 +104,17 @@ export default function FeaturedAdminPage() {
   const handleRemove = async (trackId: string) => {
     setError(null);
     try {
-      const res = await fetch(`/api/default-tracks/${trackId}`, {
+      const res = await fetch(`/api/featured-tracks/${trackId}`, {
         method: 'DELETE',
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to remove track from featured.');
+        const apiError = await parseApiError(res, data);
+        throw new Error(getFriendlyMessage(apiError));
       }
       setTracks((prev) => prev.filter((track) => track.id !== trackId));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to remove track from featured.',
-      );
+      setError(getFriendlyMessage(err as Error));
     }
   };
 

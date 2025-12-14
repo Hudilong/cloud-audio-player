@@ -17,16 +17,38 @@ export async function createTrackForUser(
   return track;
 }
 
-export async function listTracksForUser(userId: string) {
+export async function listTracksForUser(
+  userId: string,
+  options?: { cursor?: string | null; limit?: number },
+) {
+  const take = Math.min(Math.max(options?.limit || 30, 1), 100);
+  const cursor = options?.cursor
+    ? {
+        id: options.cursor,
+      }
+    : undefined;
+
   const tracks = await prisma.track.findMany({
     where: {
       userId,
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    take,
+    cursor,
+    skip: cursor ? 1 : 0,
+    orderBy: [
+      {
+        createdAt: 'desc',
+      },
+      {
+        id: 'desc',
+      },
+    ],
   });
-  return tracks;
+
+  const nextCursor =
+    tracks.length === take ? tracks[tracks.length - 1]?.id : null;
+
+  return { tracks, nextCursor };
 }
 
 export async function updateTrackForUser(
@@ -88,4 +110,37 @@ export async function deleteTrackForUser(userId: string, trackId: string) {
   });
 
   return track;
+}
+
+export async function getTrackOrderForUser(userId: string) {
+  const tracks = await prisma.track.findMany({
+    where: { userId },
+    select: { id: true },
+    orderBy: [
+      {
+        createdAt: 'desc',
+      },
+      {
+        id: 'desc',
+      },
+    ],
+  });
+
+  return tracks.map((track) => track.id);
+}
+
+export async function getTracksAccessibleByUser(
+  userId: string,
+  ids: string[],
+) {
+  if (!ids.length) return [];
+
+  const uniqueIds = Array.from(new Set(ids));
+
+  return prisma.track.findMany({
+    where: {
+      id: { in: uniqueIds },
+      OR: [{ userId }, { isFeatured: true }],
+    },
+  });
 }

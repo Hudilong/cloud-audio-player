@@ -28,6 +28,7 @@ const {
   trackFindMany,
   trackFindFirst,
   trackFindUnique,
+  trackCount,
   playlistFindFirst,
   playlistTrackUpdate,
   playlistFindUnique,
@@ -41,6 +42,7 @@ const {
   trackFindMany: vi.fn(),
   trackFindFirst: vi.fn(),
   trackFindUnique: vi.fn(),
+  trackCount: vi.fn(),
   playlistFindFirst: vi.fn(),
   playlistTrackUpdate: vi.fn(),
   playlistFindUnique: vi.fn(),
@@ -64,6 +66,7 @@ vi.mock('@utils/prisma', () => ({
       findMany: trackFindMany,
       findFirst: trackFindFirst,
       findUnique: trackFindUnique,
+      count: trackCount,
     },
     playlist: {
       findFirst: playlistFindFirst,
@@ -114,6 +117,7 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     vi.clearAllMocks();
     getServerSessionMock.mockResolvedValue({ user: { email: user.email } });
     userFindUnique.mockResolvedValue(user);
+    trackCount.mockImplementation(async () => tracks.length);
 
     tracks = [
       {
@@ -166,7 +170,9 @@ describe('e2e happy path: upload -> cover -> reorder -> resume', () => {
     );
     trackFindMany.mockImplementation(async ({ where }: { where: any }) => {
       const ids: string[] = where.id?.in || [];
-      const candidates = tracks.filter((t) => !ids.length || ids.includes(t.id));
+      const candidates = tracks.filter(
+        (t) => !ids.length || ids.includes(t.id),
+      );
       if (Array.isArray(where.OR) && where.OR.length) {
         return candidates.filter((t) =>
           where.OR.some(

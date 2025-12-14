@@ -3,8 +3,7 @@ import prisma from '@utils/prisma';
 import { badRequest, notFound } from '@utils/httpError';
 
 const ORDER_GAP = 100;
-const FEATURED_PLAYLIST_NAME =
-  process.env.FEATURED_PLAYLIST_NAME || 'Featured';
+const FEATURED_PLAYLIST_NAME = process.env.FEATURED_PLAYLIST_NAME || 'Featured';
 const FEATURED_SYSTEM_EMAIL =
   process.env.FEATURED_SYSTEM_EMAIL || 'featured@system.local';
 const FEATURED_SYSTEM_NAME =

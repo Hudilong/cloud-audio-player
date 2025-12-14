@@ -62,7 +62,7 @@ function UserMenu() {
             {({ focus }) => (
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => signOut({ callbackUrl: '/login' })}
                 className={`${
                   focus
                     ? 'bg-pastelPurple/15 dark:bg-accentDark/15 text-ink dark:text-textDark'

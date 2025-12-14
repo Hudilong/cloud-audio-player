@@ -59,6 +59,11 @@ export default function CoverImage({
 
   const [currentSrc, setCurrentSrc] = useState(source.src);
   const [hasRetried, setHasRetried] = useState(false);
+  const resolvedSizes =
+    sizes ||
+    (fill
+      ? '(min-width: 1024px) 240px, (min-width: 640px) 45vw, 90vw'
+      : undefined);
 
   const placeholder = source.placeholder === 'blur' ? 'blur' : 'empty';
   const blurDataURL =
@@ -96,7 +101,7 @@ export default function CoverImage({
       width={fill ? undefined : width}
       height={fill ? undefined : height}
       fill={fill || undefined}
-      sizes={sizes}
+      sizes={resolvedSizes}
       src={currentSrc}
       alt={alt}
       className={className}

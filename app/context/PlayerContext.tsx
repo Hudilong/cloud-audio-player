@@ -2,16 +2,19 @@
 
 import React, {
   createContext,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useCallback,
   Dispatch,
   SetStateAction,
 } from 'react';
 import { LibraryTrack } from '@app-types/libraryTrack';
 import { usePlaybackSaver } from '../hooks/usePlaybackSaver';
+import { useAudioEngine } from '../hooks/useAudioEngine';
+import { usePlaybackHydration } from '../hooks/usePlaybackHydration';
+import { useQueueController } from '../hooks/useQueueController';
 
 interface PlayerContextProps {
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -23,6 +26,11 @@ interface PlayerContextProps {
   volume: number;
   isShuffle: boolean;
   repeatMode: 'off' | 'queue' | 'track';
+  applyShuffleToQueue: (
+    tracks?: LibraryTrack[],
+    anchorIndex?: number,
+    options?: { force?: boolean },
+  ) => void;
   setTrack: Dispatch<SetStateAction<LibraryTrack | null>>;
   setCurrentTime: Dispatch<SetStateAction<number>>;
   togglePlayPause: () => Promise<void>;
@@ -31,7 +39,7 @@ interface PlayerContextProps {
   setCurrentTrackIndex: Dispatch<SetStateAction<number>>;
   handleVolumeChange: (volume: number) => void;
   toggleMute: () => void;
-  attemptPlay: () => void;
+  attemptPlay: () => Promise<void>;
   setIsShuffle: Dispatch<SetStateAction<boolean>>;
   setRepeatMode: Dispatch<SetStateAction<'off' | 'queue' | 'track'>>;
   cycleRepeatMode: () => void;
@@ -54,14 +62,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [queue, setQueue] = useState<LibraryTrack[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(1);
-  const fadeRaf = useRef<number | null>(null);
-  const endFadeStarted = useRef<boolean>(false);
-  const [isShuffle, setIsShuffle] = useState<boolean>(false);
+  const [isShuffle, setIsShuffleState] = useState<boolean>(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'queue' | 'track'>(
     'off',
   );
+  const lastLinearQueueRef = useRef<LibraryTrack[]>([]);
   const { persist: persistPlayback, debouncedPersist } = usePlaybackSaver({
     track,
     currentTime,
@@ -73,355 +79,174 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     repeatMode,
   });
 
-  const cancelFade = useCallback(() => {
-    if (fadeRaf.current) {
-      cancelAnimationFrame(fadeRaf.current);
-      fadeRaf.current = null;
-    }
-  }, []);
-
-  const setAudioVolume = useCallback((value: number) => {
-    if (audioRef.current) {
-      const clamped = Math.max(0, Math.min(1, value));
-      audioRef.current.volume = clamped;
-    }
-  }, []);
-
-  const fadeToVolume = useCallback(
-    (targetVolume: number, duration = 90) => {
-      if (!audioRef.current) return Promise.resolve();
-      cancelFade();
-      const start = performance.now();
-      const startVolume = audioRef.current.volume;
-
-      return new Promise<void>((resolve) => {
-        const step = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1);
-          const next = startVolume + (targetVolume - startVolume) * progress;
-          setAudioVolume(next);
-          if (progress < 1) {
-            fadeRaf.current = requestAnimationFrame(step);
-          } else {
-            fadeRaf.current = null;
-            resolve();
-          }
-        };
-        fadeRaf.current = requestAnimationFrame(step);
-      });
-    },
-    [cancelFade, setAudioVolume],
-  );
-
-  const attemptPlay = useCallback(() => {
-    if (!audioRef.current) return;
-
-    cancelFade();
-    const targetVolume = volume;
-    setAudioVolume(0);
-
-    const playPromise = audioRef.current.play();
-    if (playPromise?.catch) {
-      playPromise
-        .then(() => fadeToVolume(targetVolume, 100))
-        .catch((error: unknown) => {
-          const errorName = (error as DOMException | undefined)?.name;
-          if (errorName === 'NotAllowedError') {
-            setIsPlaying(false);
-          }
-        });
-    } else {
-      fadeToVolume(targetVolume, 100);
-    }
-  }, [cancelFade, fadeToVolume, setAudioVolume, setIsPlaying, volume]);
-
-  const togglePlayPause = useCallback(async () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      cancelFade();
-      await fadeToVolume(0, 90);
-      audioRef.current.pause();
-      setAudioVolume(volume);
-      persistPlayback();
-      setIsPlaying(false);
-      return;
-    }
-
-    setIsPlaying(true);
-    attemptPlay();
-  }, [
-    audioRef,
+  const {
+    fadeToVolume,
     attemptPlay,
-    isPlaying,
-    persistPlayback,
-    volume,
-    fadeToVolume,
-    cancelFade,
-    setAudioVolume,
-  ]);
-
-  const toggleMute = useCallback(() => {
-    if (!audioRef.current) return;
-    audioRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  }, [audioRef, isMuted]);
-
-  const handleSeek = useCallback(
-    (time: number) => {
-      if (!audioRef.current) return;
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-      endFadeStarted.current = false;
-      debouncedPersist();
-    },
-    [debouncedPersist],
-  );
-
-  const handleVolumeChange = useCallback(
-    (newVolume: number) => {
-      cancelFade();
-      setVolume(newVolume);
-      setAudioVolume(newVolume);
-    },
-    [cancelFade, setAudioVolume],
-  );
-
-  const cycleRepeatMode = useCallback(() => {
-    setRepeatMode((prev) => {
-      if (prev === 'off') return 'queue';
-      if (prev === 'queue') return 'track';
-      return 'off';
-    });
-  }, []);
-
-  const playRandomTrack = useCallback(() => {
-    if (queue.length === 0) return;
-
-    let randomIndex = Math.floor(Math.random() * queue.length);
-
-    if (queue.length > 1) {
-      while (randomIndex === currentTrackIndex) {
-        randomIndex = Math.floor(Math.random() * queue.length);
-      }
-    }
-
-    setCurrentTrackIndex(randomIndex);
-  }, [queue, currentTrackIndex]);
-
-  const handlePrevious = useCallback(() => {
-    endFadeStarted.current = false;
-    const proceed = () => {
-      if (isShuffle) {
-        playRandomTrack();
-      } else if (currentTrackIndex > 0) {
-        setCurrentTrackIndex(currentTrackIndex - 1);
-      } else if (repeatMode === 'queue') {
-        setCurrentTrackIndex(queue.length - 1);
-      }
-      setCurrentTime(0);
-      setIsPlaying(true);
-      persistPlayback();
-    };
-
-    if (audioRef.current && !audioRef.current.paused) {
-      fadeToVolume(0, 90).then(proceed);
-    } else {
-      proceed();
-    }
-  }, [
-    isShuffle,
-    currentTrackIndex,
-    repeatMode,
-    queue.length,
-    playRandomTrack,
-    persistPlayback,
+    togglePlayPause,
+    toggleMute,
+    handleSeek,
+    handleVolumeChange,
+  } = useAudioEngine({
     audioRef,
-    fadeToVolume,
-  ]);
+    volume,
+    setVolume,
+    setCurrentTime,
+    setIsPlaying,
+    persistPlayback,
+    debouncedPersist,
+  });
 
-  const handleNext = useCallback(
-    ({ fromEnded = false }: { fromEnded?: boolean } = {}) => {
-      endFadeStarted.current = false;
-      const proceed = () => {
-        if (queue.length === 0) {
-          setIsPlaying(false);
-          return;
-        }
+  usePlaybackHydration({
+    setQueue,
+    setTrack,
+    setCurrentTrackIndex,
+    setCurrentTime,
+    setIsPlaying,
+    setVolume,
+    setIsShuffle: useCallback((value: boolean) => setIsShuffleState(value), []),
+    setRepeatMode,
+  });
 
-        if (isShuffle) {
-          playRandomTrack();
-          setCurrentTime(0);
-          setIsPlaying(true);
-          return;
-        }
-
-        const isLastTrack = currentTrackIndex >= queue.length - 1;
-
-        if (!isLastTrack) {
-          setCurrentTrackIndex(currentTrackIndex + 1);
-          setCurrentTime(0);
-          setIsPlaying(true);
-          persistPlayback();
-          return;
-        }
-
-        if (repeatMode === 'queue') {
-          setCurrentTrackIndex(0);
-          setCurrentTime(0);
-          setIsPlaying(true);
-          persistPlayback();
-          return;
-        }
-
-        if (fromEnded) {
-          setIsPlaying(false);
-        }
-      };
-
-      if (fromEnded || !audioRef.current || audioRef.current.paused) {
-        proceed();
-      } else {
-        fadeToVolume(0, 90).then(proceed);
+  const shuffleQueueWithAnchor = useCallback(
+    (tracks: LibraryTrack[], anchorIndex: number) => {
+      if (!tracks.length) {
+        return { queue: tracks, index: 0 };
       }
+
+      const safeIndex = Math.min(
+        Math.max(anchorIndex, 0),
+        tracks.length - 1,
+      );
+      const anchorTrack = tracks[safeIndex];
+      const remainder = tracks.filter((_, idx) => idx !== safeIndex);
+
+      for (let i = remainder.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remainder[i], remainder[j]] = [remainder[j], remainder[i]];
+      }
+
+      return { queue: [anchorTrack, ...remainder], index: 0 };
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isShuffle) {
+      lastLinearQueueRef.current = [...queue];
+    }
+  }, [isShuffle, queue]);
+
+  const applyShuffleToQueue = useCallback(
+    (
+      tracks?: LibraryTrack[],
+      anchorIndex?: number,
+      options?: { force?: boolean },
+    ) => {
+      if (!isShuffle && !options?.force) return;
+      const baseQueue =
+        tracks && tracks.length > 0 ? tracks.slice() : queue.slice();
+      if (!baseQueue.length) return;
+
+      const safeAnchor = Math.min(
+        Math.max(anchorIndex ?? currentTrackIndex, 0),
+        baseQueue.length - 1,
+      );
+
+      lastLinearQueueRef.current = [...baseQueue];
+      const { queue: shuffledQueue } = shuffleQueueWithAnchor(
+        baseQueue,
+        safeAnchor,
+      );
+      setQueue(shuffledQueue);
+      setCurrentTrackIndex(0);
     },
     [
       currentTrackIndex,
       isShuffle,
-      playRandomTrack,
-      queue.length,
-      repeatMode,
-      persistPlayback,
-      audioRef,
-      fadeToVolume,
+      queue,
+      setCurrentTrackIndex,
+      setQueue,
+      shuffleQueueWithAnchor,
     ],
   );
 
-  const reorderUpcoming = useCallback(
-    (trackIds: string[]) => {
-      const prefix = queue.slice(0, currentTrackIndex + 1);
-      const trackMap = new Map(queue.map((t) => [t.id, t]));
-      const reordered = trackIds
-        .map((id) => trackMap.get(id))
-        .filter(Boolean) as LibraryTrack[];
-      setQueue([...prefix, ...reordered]);
+  const setIsShuffle = useCallback<Dispatch<SetStateAction<boolean>>>(
+    (value) => {
+      const next = typeof value === 'function' ? value(isShuffle) : value;
+      if (next === isShuffle) {
+        if (next) {
+          applyShuffleToQueue(undefined, currentTrackIndex, { force: true });
+        }
+        return;
+      }
+
+      if (next) {
+        applyShuffleToQueue(undefined, currentTrackIndex, { force: true });
+      } else {
+        const baseline =
+          lastLinearQueueRef.current.length > 0
+            ? lastLinearQueueRef.current
+            : queue;
+        const currentTrackId = queue[currentTrackIndex]?.id;
+        const restoredIndex = currentTrackId
+          ? baseline.findIndex((track) => track.id === currentTrackId)
+          : -1;
+        setQueue(baseline);
+        setCurrentTrackIndex(restoredIndex >= 0 ? restoredIndex : 0);
+      }
+
+      setIsShuffleState(next);
     },
-    [currentTrackIndex, queue],
+    [
+      applyShuffleToQueue,
+      currentTrackIndex,
+      isShuffle,
+      queue,
+      setCurrentTrackIndex,
+      setQueue,
+    ],
   );
 
-  const removeUpcoming = useCallback(
-    (trackId: string) => {
-      const newQueue = queue.filter(
-        (item, index) => !(index > currentTrackIndex && item.id === trackId),
-      );
-      setQueue(newQueue);
-    },
-    [currentTrackIndex, queue],
-  );
-
-  const clearUpcoming = useCallback(() => {
-    const newQueue = queue.slice(0, currentTrackIndex + 1);
-    setQueue(newQueue);
-  }, [currentTrackIndex, queue]);
+  const {
+    cycleRepeatMode,
+    handlePrevious,
+    handleNext,
+    reorderUpcoming,
+    removeUpcoming,
+    clearUpcoming,
+  } = useQueueController({
+    audioRef,
+    queue,
+    setQueue,
+    currentTrackIndex,
+    setCurrentTrackIndex,
+    setCurrentTime,
+    setIsPlaying,
+    repeatMode,
+    setRepeatMode,
+    fadeToVolume,
+    persistPlayback,
+  });
 
   useEffect(() => {
-    if (!audioRef.current || !queue[currentTrackIndex]) return;
-    setTrack(queue[currentTrackIndex]);
+    const nextTrack = queue[currentTrackIndex];
+    if (!nextTrack) return;
 
-    if (isPlaying) {
+    const audioElement = audioRef.current;
+    const trackChanged = track?.id !== nextTrack.id;
+    const metadataChanged = track !== nextTrack;
+
+    if (!track || metadataChanged) {
+      setTrack(nextTrack);
+    }
+
+    if (!audioElement || !isPlaying) return;
+
+    const shouldStartPlayback = trackChanged || audioElement.paused;
+    if (shouldStartPlayback) {
       attemptPlay();
     }
-  }, [attemptPlay, currentTrackIndex, queue, isPlaying]);
-
-  useEffect(() => {
-    const audioPlayer = audioRef.current;
-
-    const updateTime = () => {
-      if (audioPlayer) {
-        const { currentTime: audioCurrentTime, duration, paused } = audioPlayer;
-        setCurrentTime(audioCurrentTime);
-        if (
-          duration &&
-          Number.isFinite(duration) &&
-          !Number.isNaN(duration) &&
-          !paused
-        ) {
-          const remaining = duration - audioCurrentTime;
-          const threshold = 0.18; // seconds
-          if (remaining <= threshold && !endFadeStarted.current) {
-            endFadeStarted.current = true;
-            fadeToVolume(0, 80);
-          } else if (remaining > threshold + 0.05) {
-            endFadeStarted.current = false;
-          }
-        }
-      }
-    };
-
-    const handlePause = () => {
-      endFadeStarted.current = false;
-      persistPlayback();
-    };
-
-    audioPlayer?.addEventListener('timeupdate', updateTime);
-    audioPlayer?.addEventListener('pause', handlePause);
-
-    return () => {
-      audioPlayer?.removeEventListener('timeupdate', updateTime);
-      audioPlayer?.removeEventListener('pause', handlePause);
-      persistPlayback();
-    };
-  }, [fadeToVolume, persistPlayback]);
-
-  useEffect(() => {
-    const fetchPlayback = async () => {
-      try {
-        const res = await fetch('/api/playback');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.track && !data.trackId) return;
-
-        const restoredQueue: LibraryTrack[] = (data.queue || []).map(
-          (item: LibraryTrack) => ({
-            ...item,
-            kind: item.kind === 'featured' ? 'featured' : 'user',
-          }),
-        );
-        setQueue(restoredQueue);
-        const fallbackTrack =
-          restoredQueue[data.currentTrackIndex] || data.track || null;
-
-        const normalizedFallback = fallbackTrack
-          ? {
-              ...fallbackTrack,
-              kind: fallbackTrack.kind === 'featured' ? 'featured' : 'user',
-            }
-          : null;
-
-        setTrack(normalizedFallback);
-        setCurrentTrackIndex(data.currentTrackIndex || 0);
-        setCurrentTime(data.position || 0);
-        endFadeStarted.current = false;
-        setIsPlaying(Boolean(data.isPlaying));
-        setVolume(typeof data.volume === 'number' ? data.volume : 1);
-        setIsShuffle(Boolean(data.isShuffle));
-        setRepeatMode(
-          data.repeatMode === 'queue' || data.repeatMode === 'track'
-            ? data.repeatMode
-            : 'off',
-        );
-      } catch {
-        // Ignore hydrate failures to keep the player usable.
-      }
-    };
-
-    fetchPlayback();
-  }, []);
-
-  useEffect(() => {
-    cancelFade();
-    setAudioVolume(volume);
-  }, [volume, cancelFade, setAudioVolume]);
-
-  useEffect(() => () => cancelFade(), [cancelFade]);
+  }, [attemptPlay, currentTrackIndex, isPlaying, queue, track]);
 
   const value = useMemo(
     () => ({
@@ -434,6 +259,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       volume,
       isShuffle,
       repeatMode,
+      applyShuffleToQueue,
       setTrack,
       setCurrentTime,
       setIsPlaying,
@@ -462,6 +288,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       volume,
       isShuffle,
       repeatMode,
+      applyShuffleToQueue,
       handlePrevious,
       handleNext,
       togglePlayPause,

@@ -7,6 +7,8 @@ interface LibraryHeaderProps {
   onViewChange: (mode: ViewMode) => void;
   onClearFilter: () => void;
   onOpenUpload: () => void;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
 export default function LibraryHeader({
@@ -16,6 +18,8 @@ export default function LibraryHeader({
   onViewChange,
   onClearFilter,
   onOpenUpload,
+  searchTerm,
+  onSearchChange,
 }: LibraryHeaderProps) {
   return (
     <div className="flex flex-col gap-2 mb-4">
@@ -61,7 +65,36 @@ export default function LibraryHeader({
             </button>
           </div>
         )}
-        <div className="flex-1" />
+        <div className="flex-1 min-w-[200px]">
+          {viewMode === 'songs' && !hasActiveFilter && (
+            <div className="w-full">
+              <label className="sr-only" htmlFor="library-search">
+                Search library
+              </label>
+              <div className="relative">
+                <input
+                  id="library-search"
+                  type="text"
+                  inputMode="search"
+                  value={searchTerm}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder="Search by title, artist, or album"
+                  className="w-full px-4 py-2.5 pr-10 rounded-full border border-white/60 dark:border-white/10 bg-white/80 dark:bg-backgroundDark/70 text-sm shadow-soft focus:outline-none focus:ring-2 focus:ring-accentLight/50"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchChange('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-textLight"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={onOpenUpload}

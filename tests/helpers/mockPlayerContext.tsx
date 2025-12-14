@@ -40,6 +40,7 @@ export const createMockPlayerContext = (
     volume: 1,
     isShuffle: false,
     repeatMode: 'off',
+    applyShuffleToQueue: () => {},
     setTrack: () => {},
     setCurrentTime: () => {},
     togglePlayPause: () => {},

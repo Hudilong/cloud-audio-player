@@ -5,7 +5,8 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcrypt';
 import prisma from './prisma';
 import { SafeUser } from '../types';
-import { seedDemoTracksForUser } from './demoTracks';
+
+const isProd = process.env.NODE_ENV === 'production';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -48,6 +49,38 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
+  },
+  cookies: {
+    sessionToken: {
+      name: isProd
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProd,
+      },
+    },
+    callbackUrl: {
+      name: isProd
+        ? '__Secure-next-auth.callback-url'
+        : 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: isProd,
+      },
+    },
+    csrfToken: {
+      name: isProd ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProd,
+      },
+    },
   },
   callbacks: {
     async signIn({ user, account }) {
@@ -149,22 +182,18 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If redirect is sign-out (default url is `/`), redirect to `/`
-      if (url === baseUrl || url === `${baseUrl}/`) {
-        return `${baseUrl}/`;
+      const resolvedUrl = new URL(url, baseUrl);
+      const base = new URL(baseUrl);
+      if (resolvedUrl.origin !== base.origin) {
+        return baseUrl;
       }
-      // For sign-in, redirect to `/library`
+
+      if (resolvedUrl.pathname === '/' || resolvedUrl.pathname === '/login') {
+        return resolvedUrl.toString();
+      }
+
+      // Default: send signed-in users to their library
       return `${baseUrl}/library`;
-    },
-  },
-  events: {
-    createUser: async ({ user }) => {
-      if (!user.id) return;
-      try {
-        await seedDemoTracksForUser(user.id);
-      } catch {
-        // ignore seeding failures to avoid blocking sign-up
-      }
     },
   },
   pages: {

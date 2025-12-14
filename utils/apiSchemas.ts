@@ -1,10 +1,18 @@
 import { z } from 'zod';
+import { MAX_TRACK_DURATION_SECONDS } from './limits';
 
 export const trackBaseSchema = z.object({
   title: z.string().min(1),
   artist: z.string().min(1),
   album: z.string().optional().nullable(),
-  duration: z.number().int().positive(),
+  duration: z
+    .number()
+    .int()
+    .positive()
+    .max(
+      MAX_TRACK_DURATION_SECONDS,
+      `Track duration exceeds ${MAX_TRACK_DURATION_SECONDS} seconds`,
+    ),
   s3Key: z.string().min(1),
   genre: z.string().min(1),
   imageURL: z.string().min(1).optional().nullable(),

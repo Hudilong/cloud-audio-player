@@ -9,6 +9,7 @@ import Player from '@components/player/Player';
 import { authOptions } from '@utils/authOptions';
 import SessionProvider from './context/SessionProvider';
 import { PlayerProvider } from './context/PlayerContext';
+import { ToastProvider } from './context/ToastContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -42,7 +43,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Streaming-Platform',
+  title: 'Sreamstress',
   description: 'Your cloud music player',
 };
 
@@ -62,21 +63,23 @@ export default async function RootLayout({
       >
         <SessionProvider session={session}>
           {/* Fixed Header */}
-          <header className="fixed top-0 w-full bg-white/70 dark:bg-backgroundDark/90 backdrop-blur-lg border-b border-white/60 dark:border-white/10 text-textLight dark:text-textDark shadow-glass h-14 sm:h-16 z-20 flex items-center">
+          <header className="fixed top-0 w-full bg-white/70 dark:bg-backgroundDark/90 backdrop-blur-lg border-b border-white/60 dark:border-white/10 text-textLight dark:text-textDark shadow-glass h-14 sm:h-16 z-50 flex items-center">
             <Navbar />
           </header>
 
-          <PlayerProvider>
-            {/* Main Content */}
-            <main className="flex-grow pt-14 sm:pt-16 pb-24 sm:pb-28">
-              <MainContent>{children}</MainContent>
-            </main>
+          <ToastProvider>
+            <PlayerProvider>
+              {/* Main Content */}
+              <main className="flex-grow pt-14 sm:pt-16 pb-24 sm:pb-28">
+                <MainContent>{children}</MainContent>
+              </main>
 
-            {/* Fixed Footer */}
-            <footer className="w-full fixed bottom-0 text-textLight dark:text-textDark h-20 sm:h-24 z-20">
-              <Player />
-            </footer>
-          </PlayerProvider>
+              {/* Fixed Footer */}
+              <footer className="w-full fixed bottom-0 text-textLight dark:text-textDark h-20 sm:h-24 z-20">
+                <Player />
+              </footer>
+            </PlayerProvider>
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

@@ -16,7 +16,12 @@ describe('PlayerContext', () => {
     act(() => {
       const audioRef = result.current
         .audioRef as React.MutableRefObject<HTMLAudioElement | null>;
-      audioRef.current = { play, pause } as unknown as HTMLAudioElement;
+      audioRef.current = {
+        play,
+        pause,
+        paused: true,
+        volume: 1,
+      } as unknown as HTMLAudioElement;
     });
 
     await act(async () => {
@@ -24,6 +29,14 @@ describe('PlayerContext', () => {
     });
     expect(play).toHaveBeenCalled();
     expect(result.current.isPlaying).toBe(true);
+
+    act(() => {
+      const audioRef = result.current
+        .audioRef as React.MutableRefObject<HTMLAudioElement | null>;
+      if (audioRef.current) {
+        audioRef.current.paused = false;
+      }
+    });
 
     await act(async () => {
       await result.current.togglePlayPause();
@@ -35,7 +48,9 @@ describe('PlayerContext', () => {
   it('turns isPlaying back off when the browser blocks autoplay', async () => {
     const play = vi
       .fn()
-      .mockRejectedValue(new DOMException('Autoplay blocked', 'NotAllowedError'));
+      .mockRejectedValue(
+        new DOMException('Autoplay blocked', 'NotAllowedError'),
+      );
     const pause = vi.fn();
 
     const { result } = renderHook(() => React.useContext(PlayerContext)!, {
@@ -45,7 +60,12 @@ describe('PlayerContext', () => {
     act(() => {
       const audioRef = result.current
         .audioRef as React.MutableRefObject<HTMLAudioElement | null>;
-      audioRef.current = { play, pause } as unknown as HTMLAudioElement;
+      audioRef.current = {
+        play,
+        pause,
+        paused: true,
+        volume: 1,
+      } as unknown as HTMLAudioElement;
     });
 
     await act(async () => {
@@ -219,5 +239,33 @@ describe('PlayerContext', () => {
       result.current.clearUpcoming();
     });
     expect(result.current.queue.map((t) => t.id)).toEqual(['a']);
+  });
+
+  it('does not restart playback when reordering upcoming tracks', async () => {
+    const trackA = buildTrack({ id: 'a' });
+    const trackB = buildTrack({ id: 'b' });
+    const play = vi.fn().mockResolvedValue(undefined);
+    const audio = { volume: 1, paused: false, play } as HTMLAudioElement;
+
+    const { result } = renderHook(() => React.useContext(PlayerContext)!, {
+      wrapper: PlayerProvider,
+    });
+
+    act(() => {
+      const audioRef = result.current
+        .audioRef as React.MutableRefObject<HTMLAudioElement | null>;
+      audioRef.current = audio;
+      result.current.setTrack(trackA);
+      result.current.setQueue([trackA, trackB]);
+      result.current.setCurrentTrackIndex(0);
+      result.current.setIsPlaying(true);
+    });
+
+    await act(async () => {
+      result.current.reorderUpcoming(['b']);
+    });
+
+    expect(play).not.toHaveBeenCalled();
+    expect(audio.volume).toBe(1);
   });
 });

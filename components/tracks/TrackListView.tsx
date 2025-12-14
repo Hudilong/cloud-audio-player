@@ -22,7 +22,7 @@ import TrackItem from './TrackItem';
 
 interface TrackListViewProps {
   tracks: TrackWithCover[];
-  onSelect: (track: TrackWithCover) => void;
+  onSelect: (track: TrackWithCover) => void | Promise<void>;
   onDelete: (track: TrackWithCover) => void;
   onAddToQueue: (track: TrackWithCover) => void;
   onPlayNext: (track: TrackWithCover) => void;

@@ -5,16 +5,15 @@ import { formatTime } from '@utils/formatTime';
 import { Item } from '@app-types/item';
 import { TrackWithCover } from '@app-types/trackWithCover';
 import CoverImage from '@components/ui/CoverImage';
-import { Track } from '@prisma/client';
 import ContextualMenu from './ContextualMenu';
 
 interface TrackCardProps {
   track: TrackWithCover;
-  onSelect: (track: Track) => void;
-  onDelete: (track: Track) => void;
-  onAddToQueue: (track: Track) => void;
-  onPlayNext: (track: Track) => void;
-  onAddToPlaylist: (track: Track) => void;
+  onSelect: (track: TrackWithCover) => void;
+  onDelete: (track: TrackWithCover) => void;
+  onAddToQueue: (track: TrackWithCover) => void;
+  onPlayNext: (track: TrackWithCover) => void;
+  onAddToPlaylist: (track: TrackWithCover) => void;
 }
 
 export default function TrackCard({
