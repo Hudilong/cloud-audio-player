@@ -113,10 +113,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return { queue: tracks, index: 0 };
       }
 
-      const safeIndex = Math.min(
-        Math.max(anchorIndex, 0),
-        tracks.length - 1,
-      );
+      const safeIndex = Math.min(Math.max(anchorIndex, 0), tracks.length - 1);
       const anchorTrack = tracks[safeIndex];
       const remainder = tracks.filter((_, idx) => idx !== safeIndex);
 
@@ -189,7 +186,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             : queue;
         const currentTrackId = queue[currentTrackIndex]?.id;
         const restoredIndex = currentTrackId
-          ? baseline.findIndex((track) => track.id === currentTrackId)
+          ? baseline.findIndex((item) => item.id === currentTrackId)
           : -1;
         setQueue(baseline);
         setCurrentTrackIndex(restoredIndex >= 0 ? restoredIndex : 0);
@@ -300,6 +297,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       removeUpcoming,
       clearUpcoming,
       attemptPlay,
+      setIsShuffle,
     ],
   );
 

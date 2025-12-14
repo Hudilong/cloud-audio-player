@@ -98,20 +98,36 @@ export function useLibraryTracks({
         cursor = firstNext;
       }
 
-      while (cursor) {
+      const walkCursor = async (
+        cursorToUse: string | null,
+        acc: LibraryTrack[],
+      ): Promise<{
+        accumulated: LibraryTrack[];
+        finalCursor: string | null;
+      }> => {
+        if (!cursorToUse) {
+          return { accumulated: acc, finalCursor: cursorToUse };
+        }
+
         const { tracks, nextCursor: next } = await fetchLibraryTracks(
-          cursor,
+          cursorToUse,
           200,
         );
-        accumulated = mergeUniqueTracks(tracks, accumulated);
-        cursor = next;
-      }
+        const merged = mergeUniqueTracks(tracks, acc);
 
-      setLibrary(accumulated);
-      setNextCursor(cursor);
-      setHasMore(Boolean(cursor));
+        return walkCursor(next, merged);
+      };
 
-      return accumulated;
+      const { accumulated: completeLibrary, finalCursor } = await walkCursor(
+        cursor,
+        accumulated,
+      );
+
+      setLibrary(completeLibrary);
+      setNextCursor(finalCursor);
+      setHasMore(Boolean(finalCursor));
+
+      return completeLibrary;
     } catch (err) {
       const message = (err as Error).message || 'Failed to load tracks';
       setError(message);

@@ -68,14 +68,12 @@ export default function LibraryHeader({
         <div className="flex-1 min-w-[200px]">
           {viewMode === 'songs' && !hasActiveFilter && (
             <div className="w-full">
-              <label className="sr-only" htmlFor="library-search">
-                Search library
-              </label>
               <div className="relative">
                 <input
                   id="library-search"
                   type="text"
                   inputMode="search"
+                  aria-label="Search library"
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder="Search by title, artist, or album"

@@ -69,22 +69,24 @@ export function useLibraryPlayback({
 
   const hydrateAndMerge = useCallback(
     async (ids: string[]) => {
-      const toFetch = ids.filter(
-        (id) => id && !hydratedIdsRef.current.has(id),
-      );
+      const toFetch = ids.filter((id) => id && !hydratedIdsRef.current.has(id));
       if (!toFetch.length) return;
 
       const detailMap = new Map<string, LibraryTrack>();
       const BATCH_SIZE = 100;
-
+      const batches: string[][] = [];
       for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
-        const batch = toFetch.slice(i, i + BATCH_SIZE);
-        const details = await fetchTrackSummaries(batch);
+        batches.push(toFetch.slice(i, i + BATCH_SIZE));
+      }
+      const detailResponses = await Promise.all(
+        batches.map((batch) => fetchTrackSummaries(batch)),
+      );
+      detailResponses.forEach((details) => {
         details.forEach((track) => {
           detailMap.set(track.id, track);
           hydratedIdsRef.current.add(track.id);
         });
-      }
+      });
 
       if (!detailMap.size) return;
 
@@ -133,9 +135,7 @@ export function useLibraryPlayback({
     const orderIds = hasSelected ? ids : [selectedTrack.id, ...ids];
     const anchorIndex = Math.max(orderIds.indexOf(selectedTrack.id), 0);
 
-    const placeholders = orderIds.map((id) =>
-      toPlaceholderTrack(id, 'user'),
-    );
+    const placeholders = orderIds.map((id) => toPlaceholderTrack(id, 'user'));
 
     if (isShuffle) {
       applyShuffleToQueue(placeholders, anchorIndex, { force: true });

@@ -22,12 +22,10 @@ describe('trackUpload service helpers', () => {
 
   it('requests upload url and throws on non-200', async () => {
     const file = buildFile('song.mp3', 'audio/mpeg');
-    const fetchMock = vi
-      .spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'x' }),
-      } as Response);
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'x' }),
+    } as Response);
 
     await expect(requestUploadUrl(file)).rejects.toBeInstanceOf(Error);
     expect(fetchMock).toHaveBeenCalled();

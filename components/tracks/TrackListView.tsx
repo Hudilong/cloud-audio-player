@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TrackWithCover } from '@app-types/trackWithCover';
-import TrackItem from './TrackItem';
+import { TrackItem } from './TrackItem';
 
 interface TrackListViewProps {
   tracks: TrackWithCover[];

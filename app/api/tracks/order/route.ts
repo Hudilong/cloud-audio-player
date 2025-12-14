@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
       return toNextError(unauthorized());
     }
 
-    const shuffle =
-      new URL(request.url).searchParams.get('shuffle') === 'true';
+    const shuffle = new URL(request.url).searchParams.get('shuffle') === 'true';
 
     const ids = await getTrackOrderForUser(user.id);
 

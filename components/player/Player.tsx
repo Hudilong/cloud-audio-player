@@ -110,7 +110,7 @@ export default function Player() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 px-2.5 sm:px-6 pb-2 sm:pb-3">
-      <div className="max-w-6xl mx-auto relative rounded-3xl bg-white/85 dark:bg-backgroundDark/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-glass px-3 sm:px-5 py-2.5 sm:py-4 overflow-visible">
+      <div className="max-w-4xl mx-auto relative rounded-3xl bg-white/85 dark:bg-backgroundDark/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-glass px-3 sm:px-5 py-2.5 sm:py-4 overflow-visible">
         <div className="pointer-events-none absolute inset-0 opacity-60">
           <div className="absolute -left-10 -bottom-14 h-40 w-40 bg-pastelPurple blur-3xl" />
           <div className="absolute right-0 -top-10 h-36 w-36 bg-accentLight blur-3xl" />
@@ -178,36 +178,43 @@ export default function Player() {
           </div>
         ) : (
           <div className="relative flex flex-col gap-2 sm:gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3.5">
-              {(() => {
-                const trackWithCover = track as TrackWithCover;
-                return (
-                  <CoverImage
-                    track={trackWithCover}
-                    width={56}
-                    height={56}
-                    alt={track.title || 'track'}
-                    className="rounded-2xl w-10 h-10 sm:w-12 sm:h-12 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
-                  />
-                );
-              })()}
-              <TrackInfoDisplay />
-              <div className="hidden sm:flex ml-auto">
+            {/* Row 1: cover + info centered, mobile chevron on right */}
+            <div className="flex items-center justify-center gap-3 sm:gap-4 relative">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                {(() => {
+                  const trackWithCover = track as TrackWithCover;
+                  return (
+                    <CoverImage
+                      track={trackWithCover}
+                      width={56}
+                      height={56}
+                      alt={track.title || 'track'}
+                      className="rounded-2xl w-10 h-10 sm:w-12 sm:h-12 object-cover border border-white/70 dark:border-white/10 shadow-soft flex-shrink-0"
+                    />
+                  );
+                })()}
+                <TrackInfoDisplay />
+              </div>
+              <div className="hidden sm:flex absolute right-0">
                 <ExtraControls />
               </div>
               <button
                 type="button"
                 onClick={() => setIsCollapsed(true)}
-                className="ml-2 inline-flex sm:hidden items-center justify-center p-2 rounded-full bg-white/70 dark:bg-backgroundDark/70 border border-white/60 dark:border-white/10 text-muted hover:text-textLight"
+                className="absolute right-0 sm:hidden inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-backgroundDark/70 border border-white/60 dark:border-white/10 text-muted hover:text-textLight"
                 aria-label="Collapse player"
               >
                 <FiChevronDown />
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
-              <PlayerControls />
-              <div className="flex items-center gap-3">
+            {/* Row 2: controls centered, queue on right (desktop); stacked on mobile */}
+            <div className="hidden sm:flex items-center gap-3 sm:gap-4">
+              <div className="flex-1" />
+              <div className="flex items-center justify-center">
+                <PlayerControls />
+              </div>
+              <div className="flex-1 flex items-center justify-end gap-3">
                 <QueueDrawer
                   queue={queue}
                   currentTrackIndex={currentTrackIndex}
@@ -215,9 +222,20 @@ export default function Player() {
                   onRemove={removeUpcoming}
                   onClear={clearUpcoming}
                 />
-                <div className="sm:hidden">
-                  <ExtraControls />
-                </div>
+              </div>
+            </div>
+
+            <div className="sm:hidden flex flex-col items-center gap-2">
+              <PlayerControls />
+              <div className="flex items-center justify-center gap-3">
+                <QueueDrawer
+                  queue={queue}
+                  currentTrackIndex={currentTrackIndex}
+                  onReorder={reorderUpcoming}
+                  onRemove={removeUpcoming}
+                  onClear={clearUpcoming}
+                />
+                <ExtraControls />
               </div>
             </div>
 

@@ -143,11 +143,12 @@ export function useAudioEngine({
 
   const handleVolumeChange = useCallback(
     (newVolume: number) => {
+      const target = Math.max(0, Math.min(1, newVolume));
+      setVolume(target);
       cancelFade();
-      setVolume(newVolume);
-      setAudioVolume(newVolume);
+      fadeToVolume(target, 100);
     },
-    [cancelFade, setAudioVolume, setVolume],
+    [cancelFade, fadeToVolume, setVolume],
   );
 
   useEffect(() => {

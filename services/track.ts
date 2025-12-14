@@ -129,10 +129,7 @@ export async function getTrackOrderForUser(userId: string) {
   return tracks.map((track) => track.id);
 }
 
-export async function getTracksAccessibleByUser(
-  userId: string,
-  ids: string[],
-) {
+export async function getTracksAccessibleByUser(userId: string, ids: string[]) {
   if (!ids.length) return [];
 
   const uniqueIds = Array.from(new Set(ids));

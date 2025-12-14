@@ -22,7 +22,7 @@ type Rule = {
 
 export async function middleware(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
-  const pathname = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
   const method = request.method.toUpperCase();
 
   if (isProduction) {

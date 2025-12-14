@@ -74,11 +74,13 @@ function ExtraControls() {
             <FiVolumeX className="h-5 w-5" />
           )}
         </PopoverButton>
-
-        <PopoverPanel className="absolute right-0 sm:right-0 bottom-16 sm:bottom-18 w-16 bg-panelLight dark:bg-panelDark border border-borderLight dark:border-borderDark rounded-2xl shadow-glass p-3 flex flex-col items-center gap-2 backdrop-blur origin-bottom z-[90]">
+        <PopoverPanel className="absolute right-0 sm:right-0 bottom-16 sm:bottom-18 w-14 bg-panelLight dark:bg-panelDark border border-borderLight dark:border-borderDark rounded-2xl shadow-glass p-2.5 flex flex-col items-center gap-2 backdrop-blur origin-bottom z-[90]">
           <span className="text-[11px] font-semibold text-muted">Vol</span>
-          <div className="relative h-28 flex items-center justify-center px-1">
-            <div className="absolute inset-x-1 h-full rounded-full bg-gradient-to-b from-pastelPurple/20 via-accentLight/15 to-backgroundDark/20" />
+          <div className="relative h-24 w-5 rounded-full bg-gradient-to-b from-white/60 via-surfaceMuted/70 to-white/50 dark:from-backgroundDark/60 dark:via-backgroundDark/70 dark:to-backgroundDark/60 overflow-hidden">
+            <div
+              className="absolute bottom-0 left-0 right-0 rounded-full bg-gradient-to-t from-accentLight via-pastelPurple to-accentLight pointer-events-none"
+              style={{ height: `${Math.min(volume * 100, 100)}%` }}
+            />
             <input
               type="range"
               min="0"
@@ -86,7 +88,8 @@ function ExtraControls() {
               step="0.01"
               value={volume}
               onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-              className="relative h-28 w-4 [writing-mode:vertical-rl] [direction:rtl] accent-accentDark cursor-pointer bg-transparent"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              style={{ writingMode: 'vertical-rl' as const, direction: 'rtl' }}
             />
           </div>
           <span className="text-[11px] text-muted">
