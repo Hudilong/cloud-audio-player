@@ -13,7 +13,7 @@ import { toNextError, unauthorized } from '@utils/httpError';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
 
@@ -25,6 +25,7 @@ export async function PUT(
   if (!parsed.success) return parsed.error;
 
   try {
+    const { id } = await params;
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true, role: true },
@@ -33,8 +34,6 @@ export async function PUT(
     if (!user) {
       return toNextError(unauthorized());
     }
-
-    const { id } = params;
 
     const updatedTrack =
       user.role === 'ADMIN'
@@ -58,7 +57,7 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
 
@@ -67,6 +66,7 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true, role: true },
@@ -75,8 +75,6 @@ export async function GET(
     if (!user) {
       return toNextError(unauthorized());
     }
-
-    const { id } = params;
 
     const track =
       user.role === 'ADMIN'
@@ -91,7 +89,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
 
@@ -100,6 +98,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -107,8 +106,6 @@ export async function DELETE(
     if (!user) {
       return toNextError(unauthorized());
     }
-
-    const { id } = params;
 
     const track = await deleteTrackForUser(user.id, id);
 

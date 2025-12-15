@@ -19,7 +19,7 @@ async function getUserFromSession() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getUserFromSession();
 
@@ -28,8 +28,9 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const playlist = await prisma.playlist.findFirst({
-      where: { id: params.id, userId: user.id },
+      where: { id, userId: user.id },
       include: {
         playlistTracks: {
           orderBy: { position: 'asc' },
@@ -56,7 +57,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getUserFromSession();
 
@@ -65,8 +66,9 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const playlist = await prisma.playlist.findFirst({
-      where: { id: params.id, userId: user.id },
+      where: { id, userId: user.id },
     });
 
     if (!playlist) {
@@ -77,11 +79,11 @@ export async function DELETE(
     }
 
     await prisma.playlistTrack.deleteMany({
-      where: { playlistId: params.id },
+      where: { playlistId: id },
     });
 
     await prisma.playlist.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Playlist deleted' });
