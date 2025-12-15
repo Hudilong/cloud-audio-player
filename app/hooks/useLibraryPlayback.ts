@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import { LibraryTrack, LibraryTrackKind } from '@app-types/libraryTrack';
 import {
   fetchTrackOrder,
@@ -24,7 +31,7 @@ type UseLibraryPlaybackParams = {
     tracks: LibraryTrack[] | ((prev: LibraryTrack[]) => LibraryTrack[]),
   ) => void;
   setCurrentTrackIndex: (value: number) => void;
-  setTrack: (track: LibraryTrack) => void;
+  setTrack: Dispatch<SetStateAction<LibraryTrack | null>>;
   setCurrentTime: (value: number) => void;
   setIsPlaying: (value: boolean) => void;
 };
@@ -78,7 +85,7 @@ export function useLibraryPlayback({
       for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
         batches.push(toFetch.slice(i, i + BATCH_SIZE));
       }
-      const detailResponses = await Promise.all(
+      const detailResponses: LibraryTrack[][] = await Promise.all(
         batches.map((batch) => fetchTrackSummaries(batch)),
       );
       detailResponses.forEach((details) => {

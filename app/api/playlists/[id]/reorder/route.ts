@@ -27,7 +27,7 @@ async function getUserFromSession() {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const parsed = await parseJsonBody(request, playlistReorderSchema);
   if (!parsed.success) return parsed.error;
@@ -35,7 +35,8 @@ export async function PATCH(
 
   try {
     const userId = await getUserFromSession();
-    const updated = await reorderPlaylistForUser(userId, params.id, items);
+    const { id } = await params;
+    const updated = await reorderPlaylistForUser(userId, id, items);
 
     return NextResponse.json(
       { message: 'Playlist reordered', playlist: updated },

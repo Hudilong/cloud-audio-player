@@ -25,8 +25,9 @@ async function getUser() {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const parsed = await parseJsonBody(request, trackUpdateSchema);
   if (!parsed.success) return parsed.error;
 
@@ -36,7 +37,7 @@ export async function PUT(
       return toNextError(unauthorized());
     }
     const existing = await prisma.track.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
     if (!existing) {
       return toNextError(notFound('Track not found'));
@@ -46,7 +47,7 @@ export async function PUT(
     }
 
     const track = await prisma.track.update({
-      where: { id: params.id },
+      where: { id },
       data: parsed.data,
     });
     return NextResponse.json({ message: 'Track updated', track });
@@ -57,16 +58,17 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const user = await getUser();
     if (!user) {
       return toNextError(unauthorized());
     }
 
     const track = await prisma.track.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!track) {
@@ -77,7 +79,7 @@ export async function DELETE(
       return toNextError(forbidden('Access denied'));
     }
 
-    await removeTrackFromFeatured(params.id);
+    await removeTrackFromFeatured(id);
     return NextResponse.json({ message: 'Removed from featured' });
   } catch (error) {
     return toNextError(error, 'Error removing track from featured');
