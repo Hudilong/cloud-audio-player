@@ -2,8 +2,29 @@ import { NextResponse } from 'next/server';
 import prisma from '@utils/prisma';
 import bcrypt from 'bcrypt';
 import { validateEmail } from '@utils/validateEmail';
+import {
+  applyRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+} from '@utils/rateLimiter';
 
 export async function POST(request: Request) {
+  const rateResult = applyRateLimit(
+    `register-ip:${getClientIp(request)}`,
+    5,
+    15 * 60 * 1000,
+  );
+
+  if (!rateResult.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many sign-up attempts. Please try again later.',
+        code: 'REGISTER_RATE_LIMIT',
+      },
+      { status: 429, headers: rateLimitHeaders(rateResult) },
+    );
+  }
+
   const { email, password, name } = await request.json();
 
   if (!email || !password) {

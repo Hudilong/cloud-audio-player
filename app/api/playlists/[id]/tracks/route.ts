@@ -25,7 +25,7 @@ async function getPlaylistForUser(playlistId: string, userId: string) {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getUserFromSession();
 
@@ -40,7 +40,8 @@ export async function POST(
   }
 
   try {
-    const playlist = await getPlaylistForUser(params.id, user.id);
+    const { id } = await params;
+    const playlist = await getPlaylistForUser(id, user.id);
 
     if (!playlist) {
       return NextResponse.json(
@@ -49,16 +50,19 @@ export async function POST(
       );
     }
 
-    const track = await prisma.track.findFirst({
-      where: { id: trackId, userId: user.id },
+    const track = await prisma.track.findUnique({
+      where: { id: trackId },
     });
 
-    if (!track) {
+    if (!track || (track.userId !== user.id && !track.isFeatured)) {
       return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     const existingTrack = await prisma.playlistTrack.findFirst({
-      where: { playlistId: params.id, trackId },
+      where: {
+        playlistId: id,
+        trackId,
+      },
     });
 
     if (existingTrack) {
@@ -69,25 +73,25 @@ export async function POST(
     }
 
     const { _max: maxPosition } = await prisma.playlistTrack.aggregate({
-      where: { playlistId: params.id },
+      where: { playlistId: id },
       _max: { position: true },
     });
 
     await prisma.playlistTrack.create({
       data: {
-        playlistId: params.id,
+        playlistId: id,
         trackId,
-        position: (maxPosition?.position ?? -1) + 1,
+        position: (Number(maxPosition?.position) || 0) + 100,
       },
     });
 
     await prisma.playlist.update({
-      where: { id: params.id },
+      where: { id },
       data: { updatedAt: new Date() },
     });
 
     const updatedPlaylist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         playlistTracks: {
           orderBy: { position: 'asc' },
@@ -110,7 +114,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getUserFromSession();
 
@@ -125,7 +129,8 @@ export async function DELETE(
   }
 
   try {
-    const playlist = await getPlaylistForUser(params.id, user.id);
+    const { id } = await params;
+    const playlist = await getPlaylistForUser(id, user.id);
 
     if (!playlist) {
       return NextResponse.json(
@@ -135,11 +140,14 @@ export async function DELETE(
     }
 
     await prisma.playlistTrack.deleteMany({
-      where: { playlistId: params.id, trackId },
+      where: {
+        playlistId: id,
+        trackId,
+      },
     });
 
     const remainingTracks = await prisma.playlistTrack.findMany({
-      where: { playlistId: params.id },
+      where: { playlistId: id },
       orderBy: { position: 'asc' },
     });
 
@@ -147,18 +155,18 @@ export async function DELETE(
       remainingTracks.map((playlistTrack, index) =>
         prisma.playlistTrack.update({
           where: { id: playlistTrack.id },
-          data: { position: index },
+          data: { position: (index + 1) * 100 },
         }),
       ),
     );
 
     await prisma.playlist.update({
-      where: { id: params.id },
+      where: { id },
       data: { updatedAt: new Date() },
     });
 
     const updatedPlaylist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         playlistTracks: {
           orderBy: { position: 'asc' },

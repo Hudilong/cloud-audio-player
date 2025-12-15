@@ -3,9 +3,20 @@
 import { useCallback, useState } from 'react';
 import { parseBlob } from 'music-metadata-browser';
 import { TrackInfo } from '../../types';
+import { readFileAsDataURL } from '../../utils/imageProcessing';
+import { getFriendlyMessage } from '../../utils/apiError';
+import { useToast } from '../context/ToastContext';
+import {
+  extractEmbeddedCover,
+  requestUploadUrl,
+  saveTrack,
+  uploadCoverAndGetMeta,
+  uploadFileToUrl,
+} from '../../services/trackUpload';
 
 interface UseTrackUploadOptions {
   onSuccess?: () => void;
+  saveEndpoint?: string;
 }
 
 const emptyTrackInfo: TrackInfo = {
@@ -14,20 +25,28 @@ const emptyTrackInfo: TrackInfo = {
   album: '',
   duration: 0,
   genre: '',
-  imageURL: '',
+  imageURL: null,
+  imageBlurhash: null,
+  isFeatured: false,
 };
 
 export function useTrackUpload(options: UseTrackUploadOptions = {}) {
+  const { onSuccess, saveEndpoint = '/api/tracks' } = options;
+  const { notify } = useToast();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [trackInfo, setTrackInfo] = useState<TrackInfo>(emptyTrackInfo);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const resetUploadForm = useCallback(() => {
     setSelectedFile(null);
     setTrackInfo(emptyTrackInfo);
     setUploadError('');
+    setCoverFile(null);
+    setCoverPreview(null);
   }, []);
 
   const openUploadModal = useCallback(() => {
@@ -43,14 +62,24 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
   const extractMetadata = async (file: File): Promise<TrackInfo> => {
     const metadataResult = await parseBlob(file);
     const durationInSeconds = metadataResult.format.duration || 0;
-    return {
+    const info: TrackInfo = {
       title: metadataResult.common.title || '',
       artist: metadataResult.common.artist || '',
       album: metadataResult.common.album || '',
       imageURL: null,
+      imageBlurhash: null,
       genre: metadataResult.common.genre?.[0] || '',
       duration: Math.floor(durationInSeconds),
+      isFeatured: false,
     };
+
+    const { embeddedFile, preview } =
+      await extractEmbeddedCover(metadataResult);
+    if (embeddedFile && preview) {
+      setCoverFile(embeddedFile);
+      setCoverPreview(preview);
+    }
+    return info;
   };
 
   const handleFileChange = useCallback(
@@ -63,10 +92,12 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
         setTrackInfo(metadata);
         setUploadError('');
       } catch {
-        setUploadError('Failed to extract metadata.');
+        const message = 'Failed to extract metadata.';
+        setUploadError(message);
+        notify(message, { variant: 'error' });
       }
     },
-    [],
+    [notify],
   );
 
   const handleInputChange = useCallback(
@@ -75,6 +106,27 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
     },
     [],
   );
+
+  const handleCoverChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Cover must be an image file.');
+        return;
+      }
+      const preview = await readFileAsDataURL(file);
+      setCoverFile(file);
+      setCoverPreview(preview);
+      setUploadError('');
+    },
+    [],
+  );
+
+  const clearCover = useCallback(() => {
+    setCoverFile(null);
+    setCoverPreview(null);
+  }, []);
 
   const handleUploadSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -85,63 +137,44 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
       }
 
       setUploading(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
+      (async () => {
         try {
-          const base64Buffer = reader.result?.toString().split(',')[1];
-          if (!base64Buffer) throw new Error('Unable to read file');
-
-          const response = await fetch('/api/tracks/upload-url', {
-            method: 'POST',
-            body: JSON.stringify({
-              name: selectedFile.name,
-              type: selectedFile.type,
-              fileBuffer: base64Buffer,
-            }),
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          const { uploadURL, key, error } = await response.json();
-          if (error) throw new Error(error);
-
-          const uploadResponse = await fetch(uploadURL, {
-            method: 'PUT',
-            body: selectedFile,
-            headers: { 'Content-Type': selectedFile.type },
-          });
-          if (!uploadResponse.ok) throw new Error('Failed to upload file');
-
-          const saveResponse = await fetch('/api/tracks', {
-            method: 'POST',
-            body: JSON.stringify({
+          const coverMeta = await uploadCoverAndGetMeta(coverFile);
+          const { uploadURL, key } = await requestUploadUrl(selectedFile);
+          await uploadFileToUrl(uploadURL, selectedFile);
+          await saveTrack(
+            {
               ...trackInfo,
               s3Key: key,
-            }),
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (!saveResponse.ok) throw new Error('Failed to save metadata');
+              imageURL: coverMeta.imageURL,
+              imageBlurhash: coverMeta.imageBlurhash,
+            },
+            saveEndpoint,
+          );
 
           closeUploadModal();
-          options.onSuccess?.();
+          onSuccess?.();
         } catch (err) {
-          if (err instanceof Error) {
-            setUploadError(err.message);
-          } else {
-            setUploadError('An unexpected error occurred');
-          }
+          const message =
+            err instanceof Error
+              ? getFriendlyMessage(err)
+              : 'An unexpected error occurred';
+          setUploadError(message);
+          notify(message, { variant: 'error' });
         } finally {
           setUploading(false);
         }
-      };
-
-      reader.onerror = () => {
-        setUploadError('Failed to read file');
-        setUploading(false);
-      };
-
-      reader.readAsDataURL(selectedFile);
+      })();
     },
-    [closeUploadModal, options, selectedFile, trackInfo],
+    [
+      closeUploadModal,
+      coverFile,
+      onSuccess,
+      saveEndpoint,
+      selectedFile,
+      trackInfo,
+      notify,
+    ],
   );
 
   return {
@@ -150,10 +183,14 @@ export function useTrackUpload(options: UseTrackUploadOptions = {}) {
     trackInfo,
     uploading,
     uploadError,
+    coverFile,
+    coverPreview,
     openUploadModal,
     closeUploadModal,
     handleFileChange,
     handleInputChange,
+    handleCoverChange,
+    clearCover,
     handleUploadSubmit,
     resetUploadForm,
     setUploadError,

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import ProgressBar from '../../components/ProgressBar';
+import ProgressBar from '@components/player/ProgressBar';
 import { PlayerContext } from '@/context/PlayerContext';
 import {
   buildTrack,

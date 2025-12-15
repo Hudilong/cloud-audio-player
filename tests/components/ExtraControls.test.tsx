@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import ExtraControls from '../../components/ExtraControls';
+import ExtraControls from '@components/player/ExtraControls';
 import { PlayerContext } from '@/context/PlayerContext';
 import { createMockPlayerContext } from '../helpers/mockPlayerContext';
 

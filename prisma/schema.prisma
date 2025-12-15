@@ -14,6 +14,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id            String         @id @default(cuid())
   name          String?
@@ -26,6 +31,7 @@ model User {
   tracks        Track[] // User's uploaded tracks
   playbackState PlaybackState? @relation("UserPlaybackState")
   Playlist      Playlist[]
+  role          Role           @default(USER)
 }
 
 model Account {
@@ -69,30 +75,33 @@ model Track {
   album          String?
   genre          String?
   imageURL       String?
+  imageBlurhash  String?
   duration       Int // Duration in seconds
   s3Key          String
   userId         String
+  isFeatured     Boolean         @default(false)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   playlistTracks PlaylistTrack[]
-  playbackState  PlaybackState?  @relation("AudioPlaybackState")
+  playbackStates PlaybackState[] @relation("AudioPlaybackState")
 }
 
 model PlaybackState {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  trackId           String?  @unique
-  position          Float    @default(0)
-  isPlaying         Boolean  @default(false)
-  volume            Float    @default(1.0)
-  shuffle           Boolean  @default(false)
-  repeat            Boolean  @default(false)
-  currentTrackIndex Int      @default(0)
-  tracks            Json     @default("[]")
-  updatedAt         DateTime @updatedAt
-  user              User     @relation("UserPlaybackState", fields: [userId], references: [id], onDelete: Cascade)
-  track             Track?   @relation("AudioPlaybackState", fields: [trackId], references: [id], onDelete: Cascade)
+  id                String        @id @default(cuid())
+  userId            String        @unique
+  trackId           String?
+  position          Float         @default(0)
+  isPlaying         Boolean       @default(false)
+  volume            Float         @default(1.0)
+  shuffle           Boolean       @default(false)
+  repeat            Boolean       @default(false)
+  repeatMode        String        @default("off")
+  currentTrackIndex Int           @default(0)
+  tracks            Json          @default("[]")
+  updatedAt         DateTime      @updatedAt
+  user              User          @relation("UserPlaybackState", fields: [userId], references: [id], onDelete: Cascade)
+  track             Track?        @relation("AudioPlaybackState", fields: [trackId], references: [id], onDelete: Cascade)
 }
 
 model Playlist {
@@ -106,13 +115,14 @@ model Playlist {
 }
 
 model PlaylistTrack {
-  id         String   @id @default(cuid())
-  playlistId String
-  trackId    String
-  position   Int
-  addedAt    DateTime @default(now())
-  playlist   Playlist @relation(fields: [playlistId], references: [id])
-  track      Track    @relation(fields: [trackId], references: [id])
+  id              String        @id @default(cuid())
+  playlistId      String
+  trackId         String
+  position        Int
+  addedAt         DateTime      @default(now())
+  playlist        Playlist      @relation(fields: [playlistId], references: [id])
+  track           Track         @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([playlistId, position])
+  @@unique([playlistId, trackId])
 }

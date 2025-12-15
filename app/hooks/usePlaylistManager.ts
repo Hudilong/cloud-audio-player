@@ -1,14 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Track } from '@prisma/client';
+import { LibraryTrack } from '@app-types/libraryTrack';
 import type { PlaylistWithTracks } from '../../types/playlist';
+import { getFriendlyMessage } from '../../utils/apiError';
+import { useToast } from '../context/ToastContext';
+import {
+  addTrackToPlaylistClient,
+  createPlaylistClient,
+  deletePlaylistClient,
+  fetchPlaylistsClient,
+  reorderPlaylistTracksClient,
+} from '../../services/playlistsClient';
 
 type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 const defaultPlaylistFilter = { id: null, name: 'Library' };
 
 export function usePlaylistManager(status: SessionStatus) {
+  const { notify } = useToast();
   const [playlists, setPlaylists] = useState<PlaylistWithTracks[]>([]);
   const [activePlaylistFilter, setActivePlaylistFilter] = useState<{
     id: string | null;
@@ -20,23 +30,22 @@ export function usePlaylistManager(status: SessionStatus) {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistError, setPlaylistError] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState('');
-  const [trackToAdd, setTrackToAdd] = useState<Track | null>(null);
+  const [trackToAdd, setTrackToAdd] = useState<LibraryTrack | null>(null);
+  const [reorderingPlaylistId, setReorderingPlaylistId] = useState<
+    string | null
+  >(null);
 
   const fetchPlaylists = useCallback(async () => {
     try {
-      const res = await fetch('/api/playlists');
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Failed to load playlists.');
-
-      setPlaylists(data.playlists || []);
+      const playlistsResponse = await fetchPlaylistsClient();
+      setPlaylists(playlistsResponse);
       setPlaylistError(null);
     } catch (error) {
-      setPlaylistError(
-        error instanceof Error ? error.message : 'Failed to load playlists.',
-      );
+      const message = getFriendlyMessage(error as Error);
+      setPlaylistError(message);
+      notify(message, { variant: 'error' });
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -50,12 +59,17 @@ export function usePlaylistManager(status: SessionStatus) {
       if (!playlist) return [];
       return [...playlist.playlistTracks]
         .sort((a, b) => a.position - b.position)
-        .map((item) => item.track);
+        .map((item) => ({
+          ...item.track,
+          kind: item.track.isFeatured
+            ? ('featured' as const)
+            : ('user' as const),
+        }));
     },
     [playlists],
   );
 
-  const openPlaylistModal = useCallback((selectedTrack: Track) => {
+  const openPlaylistModal = useCallback((selectedTrack: LibraryTrack) => {
     setTrackToAdd(selectedTrack);
     setPlaylistModalOpen(true);
     setPlaylistError(null);
@@ -72,41 +86,28 @@ export function usePlaylistManager(status: SessionStatus) {
     async (playlistId: string, trackId: string) => {
       setPlaylistLoading(true);
       try {
-        const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trackId }),
-        });
+        const playlist = await addTrackToPlaylistClient(playlistId, trackId);
 
-        const data = await res.json();
-
-        if (!res.ok)
-          throw new Error(data.error || 'Failed to add to playlist.');
-
-        if (data.playlist) {
+        if (playlist) {
           setPlaylists((prev) => {
-            const exists = prev.some(
-              (playlist) => playlist.id === data.playlist.id,
-            );
+            const exists = prev.some((pl) => pl.id === playlist.id);
             if (exists) {
-              return prev.map((playlist) =>
-                playlist.id === data.playlist.id ? data.playlist : playlist,
-              );
+              return prev.map((pl) => (pl.id === playlist.id ? playlist : pl));
             }
-            return [data.playlist, ...prev];
+            return [playlist, ...prev];
           });
         }
 
         closePlaylistModal();
       } catch (error) {
-        setPlaylistError(
-          error instanceof Error ? error.message : 'Failed to add to playlist.',
-        );
+        const message = getFriendlyMessage(error as Error);
+        setPlaylistError(message);
+        notify(message, { variant: 'error' });
       } finally {
         setPlaylistLoading(false);
       }
     },
-    [closePlaylistModal],
+    [closePlaylistModal, notify],
   );
 
   const createPlaylist = useCallback(async () => {
@@ -117,20 +118,7 @@ export function usePlaylistManager(status: SessionStatus) {
 
     setPlaylistLoading(true);
     try {
-      const res = await fetch('/api/playlists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: playlistName.trim() }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Failed to create playlist.');
-
-      const newPlaylist: PlaylistWithTracks = {
-        ...data.playlist,
-        playlistTracks: [],
-      };
+      const newPlaylist = await createPlaylistClient(playlistName.trim());
 
       setPlaylists((prev) => [newPlaylist, ...prev]);
       setPlaylistError(null);
@@ -145,42 +133,71 @@ export function usePlaylistManager(status: SessionStatus) {
 
       return newPlaylist;
     } catch (error) {
-      setPlaylistError(
-        error instanceof Error ? error.message : 'Failed to create playlist.',
-      );
+      const message = getFriendlyMessage(error as Error);
+      setPlaylistError(message);
+      notify(message, { variant: 'error' });
       return null;
     } finally {
       setPlaylistLoading(false);
     }
-  }, [addTrackToPlaylist, playlistName, trackToAdd]);
+  }, [addTrackToPlaylist, notify, playlistName, trackToAdd]);
 
-  const deletePlaylist = useCallback(async (playlistId: string) => {
-    try {
-      const res = await fetch(`/api/playlists/${playlistId}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete playlist.');
+  const deletePlaylist = useCallback(
+    async (playlistId: string) => {
+      try {
+        await deletePlaylistClient(playlistId);
+        setPlaylists((prev) =>
+          prev.filter((playlist) => playlist.id !== playlistId),
+        );
 
-      setPlaylists((prev) =>
-        prev.filter((playlist) => playlist.id !== playlistId),
-      );
+        return true;
+      } catch (error) {
+        const message = getFriendlyMessage(error as Error);
+        setPlaylistError(message);
+        notify(message, { variant: 'error' });
+        return false;
+      }
+    },
+    [notify],
+  );
 
-      return true;
-    } catch (error) {
-      setPlaylistError(
-        error instanceof Error ? error.message : 'Failed to delete playlist.',
-      );
-      return false;
-    }
-  }, []);
+  const reorderPlaylistTracks = useCallback(
+    async (
+      playlistId: string,
+      orderedTracks: Array<{ id: string; kind: 'user' | 'featured' }>,
+    ) => {
+      setReorderingPlaylistId(playlistId);
+      try {
+        const playlist = await reorderPlaylistTracksClient(
+          playlistId,
+          orderedTracks,
+        );
+
+        if (playlist) {
+          setPlaylists((prev) =>
+            prev.map((pl) => (pl.id === playlist.id ? playlist : pl)),
+          );
+        }
+
+        return true;
+      } catch (error) {
+        const message = getFriendlyMessage(error as Error);
+        setPlaylistError(message);
+        notify(message, { variant: 'error' });
+        return false;
+      } finally {
+        setReorderingPlaylistId(null);
+      }
+    },
+    [notify],
+  );
 
   const removeTrackFromPlaylists = useCallback((trackId: string) => {
     setPlaylists((prev) =>
       prev.map((playlist) => ({
         ...playlist,
         playlistTracks: playlist.playlistTracks.filter(
-          (pt) => pt.track.id !== trackId,
+          (pt) => pt.track?.id !== trackId,
         ),
       })),
     );
@@ -205,10 +222,12 @@ export function usePlaylistManager(status: SessionStatus) {
     fetchPlaylists,
     getPlaylistTracks,
     addTrackToPlaylist,
+    reorderPlaylistTracks,
     createPlaylist,
     deletePlaylist,
     removeTrackFromPlaylists,
     defaultPlaylistFilter,
     setPlaylistError,
+    reorderingPlaylistId,
   };
 }

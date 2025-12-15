@@ -5,6 +5,7 @@
 :root {
   --background: #f7f7ff;
   --foreground: #0f1024;
+  --scrollbar-width: calc(100vw - 100%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -12,6 +13,64 @@
     --background: #0e1024;
     --foreground: #e9eaf7;
   }
+}
+
+html {
+  overflow-y: scroll !important;
+  padding-right: 0 !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 120, 255, 0.85) rgba(52, 31, 99, 0.75);
+}
+
+/* Soft scrollbars for scrollable panels */
+.scrollbar-soft {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 120, 255, 0.85) rgba(18, 20, 40, 0.55);
+}
+
+.scrollbar-soft::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-soft::-webkit-scrollbar-track {
+  background: rgba(14, 16, 36, 0.45);
+}
+
+.scrollbar-soft::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c6b4ff 0%, #8fa8ff 100%);
+  border-radius: 9999px;
+}
+
+.scrollbar-soft::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #b29cff 0%, #7895ff 100%);
+}
+
+/* Apply soft scrollbar globally */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: linear-gradient(
+    180deg,
+    rgba(68, 40, 125, 0.65),
+    rgba(27, 18, 55, 0.75)
+  );
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c6b4ff 0%, #8fa8ff 100%);
+  border-radius: 9999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #b29cff 0%, #7895ff 100%);
 }
 
 body {
@@ -29,6 +88,7 @@ body {
     system-ui,
     -apple-system,
     sans-serif;
+  scrollbar-gutter: stable both-edges;
 }
 
 @media (prefers-color-scheme: dark) {
