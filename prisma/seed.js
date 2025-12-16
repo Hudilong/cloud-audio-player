@@ -60,14 +60,14 @@ async function main() {
   const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD || 'changeme-admin';
 
   // Always ensure the admin account exists
-  await ensureUser(seedAdminEmail, 'Admin User', seedAdminPassword, 'ADMIN');
+  await ensureUser(seedAdminEmail, 'Admin', seedAdminPassword, 'ADMIN');
 
   if (isProduction) {
     console.log('Production mode: only seeding admin user');
     return;
   }
 
-  const user = await ensureUser(seedEmail, 'Dev User', seedPassword, 'USER');
+  const user = await ensureUser(seedEmail, 'Dev User', seedPassword);
 
   const audioKeyForSeeds =
     seedAudioKey || (allowFakeAudio ? fakeAudioKey : null);

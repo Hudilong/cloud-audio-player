@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
-    "postinstall": "npx prisma generate",
-    "postbuild": "npx prisma migrate deploy",
-    "start": "next start",
+    "postinstall": "prisma generate",
+    "start": "node scripts/run-migrate.mjs && next start",
+    "migrate": "node scripts/run-migrate.mjs",
     "lint": "next lint",
     "check": "next lint && prettier --check .",
     "fix": "next lint --fix && prettier --write .",
