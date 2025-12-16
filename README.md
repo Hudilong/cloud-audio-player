@@ -114,6 +114,10 @@ pnpm start
 
 Provide the same environment variables used in development to your hosting platform.
 
+- `pnpm start` will run `prisma migrate deploy` before starting the server. If you need to skip that (and run migrations separately), set `SKIP_PRISMA_MIGRATE=true`.
+- `pnpm build` still tries to run migrations, but it will now skip them when the database host is unreachable (common on remote builders without private network access). Ensure migrations run at startup or via your deployment pipeline so the schema stays current.
+- If your platform brings up the database a few seconds after the app, set `STARTUP_DELAY_SECONDS=3` (or similar) so the migration step waits before connecting, instead of wrapping the start command in `sleep`.
+
 ## CI/CD Workflow
 
 GitHub Actions is configured to handle CI:
