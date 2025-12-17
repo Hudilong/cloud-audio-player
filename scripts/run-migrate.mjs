@@ -72,7 +72,7 @@ if (!reachable) {
 }
 
 try {
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  execSync('prisma migrate deploy', { stdio: 'inherit' });
   console.log(`${label} Prisma migrate deploy completed.`);
 } catch (error) {
   if (allowSkip) {
