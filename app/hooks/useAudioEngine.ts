@@ -49,6 +49,13 @@ export function useAudioEngine({
     (targetVolume: number, duration = 90) => {
       if (!audioRef.current) return Promise.resolve();
       cancelFade();
+      const isVisible =
+        typeof document === 'undefined' ||
+        document.visibilityState === 'visible';
+      if (!isVisible) {
+        setAudioVolume(targetVolume);
+        return Promise.resolve();
+      }
       const start = performance.now();
       const startVolume = audioRef.current.volume;
 
@@ -195,6 +202,24 @@ export function useAudioEngine({
     cancelFade();
     setAudioVolume(volume);
   }, [volume, cancelFade, setAudioVolume]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      const player = audioRef.current;
+      if (!player) return;
+      if (
+        document.visibilityState === 'visible' &&
+        !player.paused &&
+        player.volume === 0
+      ) {
+        setAudioVolume(volume);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibility);
+  }, [audioRef, setAudioVolume, volume]);
 
   useEffect(() => () => cancelFade(), [cancelFade]);
 
