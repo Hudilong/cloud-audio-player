@@ -14,12 +14,18 @@ const exitSkip = (message) => {
 };
 
 if (skipFlag) {
-  exitSkip('Skipping Prisma migrate deploy (SKIP_PRISMA_MIGRATE=true). Remember to run migrations before serving traffic.');
+  exitSkip(
+    'Skipping Prisma migrate deploy (SKIP_PRISMA_MIGRATE=true). Remember to run migrations before serving traffic.',
+  );
 }
 
 if (!Number.isNaN(startupDelaySeconds) && startupDelaySeconds > 0) {
-  console.log(`${label} Waiting ${startupDelaySeconds}s before running migrations...`);
-  await new Promise((resolve) => setTimeout(resolve, startupDelaySeconds * 1000));
+  console.log(
+    `${label} Waiting ${startupDelaySeconds}s before running migrations...`,
+  );
+  await new Promise((resolve) =>
+    setTimeout(resolve, startupDelaySeconds * 1000),
+  );
 }
 
 const dbUrl = process.env.DATABASE_URL;
@@ -76,7 +82,9 @@ try {
   console.log(`${label} Prisma migrate deploy completed.`);
 } catch (error) {
   if (allowSkip) {
-    exitSkip(`Prisma migrate deploy failed (${error.status ?? 1}); continuing. Run migrations before starting the app.`);
+    exitSkip(
+      `Prisma migrate deploy failed (${error.status ?? 1}); continuing. Run migrations before starting the app.`,
+    );
   }
   console.error(`${label} Prisma migrate deploy failed.`);
   process.exit(error.status ?? 1);
