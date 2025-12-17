@@ -50,7 +50,8 @@ export function useAudioEngine({
       if (!audioRef.current) return Promise.resolve();
       cancelFade();
       const isVisible =
-        typeof document === 'undefined' || document.visibilityState === 'visible';
+        typeof document === 'undefined' ||
+        document.visibilityState === 'visible';
       if (!isVisible) {
         setAudioVolume(targetVolume);
         return Promise.resolve();
