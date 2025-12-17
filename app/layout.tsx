@@ -43,7 +43,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Sreamstress',
+  title: 'Streamstress',
   description: 'Your cloud music player',
 };
 
