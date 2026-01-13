@@ -13,6 +13,8 @@ import FeaturedSection from '@components/library/FeaturedSection';
 import UploadTrackModal from '@components/library/UploadTrackModal';
 import EditTrackModal from '@components/library/EditTrackModal';
 import CreatePlaylistModal from '@components/library/CreatePlaylistModal';
+import AlertBanner from '@components/ui/AlertBanner';
+import FeaturedDeleteModal from '@components/library/FeaturedDeleteModal';
 import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import { useTrackUpload } from '../hooks/useTrackUpload';
 import { useLibraryTracks } from '../hooks/useLibraryTracks';
@@ -39,6 +41,7 @@ export default function Library(): JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const playerContext = useContext(PlayerContext);
   const isAdmin = status === 'authenticated' && session?.user?.role === 'ADMIN';
+  const currentUserId = session?.user?.id ?? null;
 
   const {
     playlists,
@@ -60,6 +63,7 @@ export default function Library(): JSX.Element {
     defaultPlaylistFilter,
     setPlaylistError,
     reorderPlaylistTracks,
+    removeTrackFromPlaylist,
     fetchPlaylists,
   } = usePlaylistManager(status);
   const {
@@ -176,7 +180,14 @@ export default function Library(): JSX.Element {
     onAfterSave: fetchPlaylists,
   });
 
-  const { handleDeleteTrack } = useTrackDeletion({
+  const {
+    handleDeleteTrack,
+    featuredDeleteModalOpen,
+    featuredDeleteTrack,
+    confirmFeaturedDelete,
+    cancelFeaturedDelete,
+    deleteLoading,
+  } = useTrackDeletion({
     isTrackFeatured,
     onFeaturedRemove: (id) =>
       setFeaturedTracks((prev) => prev.filter((item) => item.id !== id)),
@@ -262,6 +273,11 @@ export default function Library(): JSX.Element {
     setActivePlaylistFilter({ id: playlistId, name: playlist.name });
   };
 
+  const handleRemoveFromPlaylist = async (selectedTrack: LibraryTrack) => {
+    if (!activePlaylistFilter.id) return;
+    await removeTrackFromPlaylist(activePlaylistFilter.id, selectedTrack.id);
+  };
+
   const handleSelectPlaylist = (playlistId: string) => {
     if (trackToAdd) {
       addTrackToPlaylist(playlistId, trackToAdd.id);
@@ -311,19 +327,24 @@ export default function Library(): JSX.Element {
       />
 
       {errorDisplay && (
-        <div className="mb-4 px-4 py-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm shadow-soft">
-          {errorDisplay}
-        </div>
+        <AlertBanner
+          message={errorDisplay}
+          variant="error"
+          className="mb-4"
+          onDismiss={() => setErrordisplay(null)}
+        />
       )}
 
       {viewMode === 'songs' && !activePlaylistFilter.id && (
         <FeaturedSection
           tracks={featuredTracks}
           error={featuredError}
+          onDismissError={() => setFeaturedError(null)}
           onSelect={handleFeaturedSelect}
           onAddToQueue={handleFeaturedAddToQueue}
           onPlayNext={handleFeaturedPlayNext}
           onAddToPlaylist={handleAddToPlaylist}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -341,11 +362,24 @@ export default function Library(): JSX.Element {
         onAddToQueue={handleAddTrackToQueue}
         onPlayNext={handlePlayNext}
         onAddToPlaylist={handleAddToPlaylist}
+        onRemoveFromPlaylist={
+          activePlaylistFilter.id ? handleRemoveFromPlaylist : undefined
+        }
         reorderable={Boolean(activePlaylistFilter.id)}
         onReorder={handleReorderTracks}
         onEdit={openEditModal}
         onAddToFeatured={isAdmin ? addToFeatured : undefined}
         featuringTrackId={featuringTrackId}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+      />
+
+      <FeaturedDeleteModal
+        isOpen={featuredDeleteModalOpen}
+        track={featuredDeleteTrack}
+        onCancel={cancelFeaturedDelete}
+        onConfirm={confirmFeaturedDelete}
+        loading={deleteLoading}
       />
 
       {viewMode === 'playlists' && (
@@ -377,6 +411,7 @@ export default function Library(): JSX.Element {
         newPlaylistName={playlistName}
         loading={playlistLoading}
         error={playlistError}
+        onDismissError={() => setPlaylistError(null)}
         onClose={closePlaylistModal}
         onSelectPlaylist={handleSelectPlaylist}
         onCreatePlaylist={createPlaylist}
@@ -391,6 +426,7 @@ export default function Library(): JSX.Element {
         coverFile={coverFile}
         coverPreview={coverPreview}
         uploading={uploading}
+        onDismissError={() => setUploadError('')}
         onClose={() => {
           closeUploadModal();
         }}
@@ -409,6 +445,7 @@ export default function Library(): JSX.Element {
         editCoverPreview={editCoverPreview}
         editError={editError}
         editLoading={editLoading}
+        onDismissError={() => setEditError(null)}
         onClose={() => {
           closeEditModal();
           setEditError(null);
@@ -424,6 +461,7 @@ export default function Library(): JSX.Element {
         playlistName={playlistName}
         playlistLoading={playlistLoading}
         playlistError={playlistError}
+        onDismissError={() => setPlaylistError(null)}
         onClose={() => {
           setCreatePlaylistOpen(false);
           setPlaylistError(null);

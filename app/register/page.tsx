@@ -2,38 +2,40 @@
 
 import { useRouter } from 'next/navigation';
 import AuthShell from '@components/auth/AuthShell';
+import AlertBanner from '@components/ui/AlertBanner';
 import { useAuthForm } from '../hooks/useAuthForm';
 import { validateEmail } from '../../utils/validateEmail';
 
 function RegisterPage() {
   const router = useRouter();
-  const { values, error, submitting, updateField, handleSubmit } = useAuthForm({
-    initialValues: {
-      name: '',
-      email: '',
-      password: '',
-    },
-    validate: (formValues) => {
-      if (!validateEmail(formValues.email)) {
-        return 'Please enter a valid email address';
-      }
-      return null;
-    },
-    onSubmit: async (userInfo) => {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(userInfo),
-        headers: { 'Content-Type': 'application/json' },
-      });
+  const { values, error, submitting, setError, updateField, handleSubmit } =
+    useAuthForm({
+      initialValues: {
+        name: '',
+        email: '',
+        password: '',
+      },
+      validate: (formValues) => {
+        if (!validateEmail(formValues.email)) {
+          return 'Please enter a valid email address';
+        }
+        return null;
+      },
+      onSubmit: async (userInfo) => {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(userInfo),
+          headers: { 'Content-Type': 'application/json' },
+        });
 
-      const data = await res.json();
-      if (res.ok) {
-        router.push('/login');
-      } else {
-        throw new Error(data.error || 'An error occurred');
-      }
-    },
-  });
+        const data = await res.json();
+        if (res.ok) {
+          router.push('/login');
+        } else {
+          throw new Error(data.error || 'An error occurred');
+        }
+      },
+    });
 
   return (
     <AuthShell
@@ -52,9 +54,11 @@ function RegisterPage() {
       }
     >
       {error && (
-        <p className="text-red-500 text-center font-medium" role="alert">
-          {error}
-        </p>
+        <AlertBanner
+          message={error}
+          variant="error"
+          onDismiss={() => setError('')}
+        />
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

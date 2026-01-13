@@ -3,6 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import GlassModal from '@components/ui/GlassModal';
+import AlertBanner from '@components/ui/AlertBanner';
 import { TrackInfo } from '@app-types/trackInfo';
 
 const FileUploadForm = dynamic(
@@ -27,6 +28,7 @@ type UploadTrackModalProps = {
   coverFile: File | null;
   coverPreview: string | null;
   uploading: boolean;
+  onDismissError: () => void;
   onClose: () => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onInputChange: (
@@ -45,6 +47,7 @@ export default function UploadTrackModal({
   coverFile,
   coverPreview,
   uploading,
+  onDismissError,
   onClose,
   onFileChange,
   onInputChange,
@@ -61,7 +64,12 @@ export default function UploadTrackModal({
       size="lg"
     >
       {uploadError && (
-        <p className="text-red-500 text-sm font-medium mt-1">{uploadError}</p>
+        <AlertBanner
+          message={uploadError}
+          variant="error"
+          className="mt-1"
+          onDismiss={onDismissError}
+        />
       )}
       <div className="mt-4">
         <FileUploadForm

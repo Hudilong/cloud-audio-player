@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlaylistWithTracks } from '@app-types/playlist';
+import AlertBanner from '@components/ui/AlertBanner';
 
 interface PlaylistPickerModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface PlaylistPickerModalProps {
   newPlaylistName: string;
   loading?: boolean;
   error?: string | null;
+  onDismissError: () => void;
   onClose: () => void;
   onSelectPlaylist: (playlistId: string) => void;
   onCreatePlaylist: () => void;
@@ -23,6 +25,7 @@ export default function PlaylistPickerModal({
   newPlaylistName,
   loading,
   error,
+  onDismissError,
   onClose,
   onSelectPlaylist,
   onCreatePlaylist,
@@ -56,7 +59,13 @@ export default function PlaylistPickerModal({
           </button>
         </div>
 
-        {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+        {error && (
+          <AlertBanner
+            message={error}
+            variant="error"
+            onDismiss={onDismissError}
+          />
+        )}
 
         <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
           {playlists.length === 0 ? (

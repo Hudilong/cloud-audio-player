@@ -2,12 +2,14 @@
 
 import React from 'react';
 import GlassModal from '@components/ui/GlassModal';
+import AlertBanner from '@components/ui/AlertBanner';
 
 type CreatePlaylistModalProps = {
   isOpen: boolean;
   playlistName: string;
   playlistLoading: boolean;
   playlistError: string | null;
+  onDismissError: () => void;
   onClose: () => void;
   onCreate: () => void;
   onNameChange: (value: string) => void;
@@ -18,6 +20,7 @@ export default function CreatePlaylistModal({
   playlistName,
   playlistLoading,
   playlistError,
+  onDismissError,
   onClose,
   onCreate,
   onNameChange,
@@ -49,7 +52,11 @@ export default function CreatePlaylistModal({
       }
     >
       {playlistError && (
-        <p className="text-red-500 text-sm font-medium">{playlistError}</p>
+        <AlertBanner
+          message={playlistError}
+          variant="error"
+          onDismiss={onDismissError}
+        />
       )}
       <label
         className="space-y-2 block text-sm font-medium text-textLight dark:text-textDark"

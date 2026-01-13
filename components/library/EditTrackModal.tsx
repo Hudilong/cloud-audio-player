@@ -3,6 +3,7 @@
 import React from 'react';
 import { LibraryTrack } from '@app-types/libraryTrack';
 import GlassModal from '@components/ui/GlassModal';
+import AlertBanner from '@components/ui/AlertBanner';
 import { getCoverSrc } from '@utils/getCoverSrc';
 
 type EditTrackModalProps = {
@@ -18,6 +19,7 @@ type EditTrackModalProps = {
   editCoverPreview: string | null;
   editError: string | null;
   editLoading: boolean;
+  onDismissError: () => void;
   onClose: () => void;
   onClearCover: () => void;
   onSave: () => void;
@@ -35,6 +37,7 @@ export default function EditTrackModal({
   editCoverPreview,
   editError,
   editLoading,
+  onDismissError,
   onClose,
   onClearCover,
   onSave,
@@ -75,7 +78,12 @@ export default function EditTrackModal({
       }
     >
       {editError && (
-        <p className="text-red-500 text-sm font-medium mt-1">{editError}</p>
+        <AlertBanner
+          message={editError}
+          variant="error"
+          className="mt-1"
+          onDismiss={onDismissError}
+        />
       )}
       <div className="mt-4 space-y-4">
         <div className="space-y-2">
