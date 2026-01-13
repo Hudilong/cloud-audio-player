@@ -27,12 +27,15 @@ interface TrackListViewProps {
   onAddToQueue: (track: TrackWithCover) => void;
   onPlayNext: (track: TrackWithCover) => void;
   onAddToPlaylist: (track: TrackWithCover) => void;
+  onRemoveFromPlaylist?: (track: TrackWithCover) => void;
   reorderable?: boolean;
   onReorder?: (orderedTracks: TrackWithCover[]) => void;
   onEdit?: (track: TrackWithCover) => void;
   onAddToFeatured?: (track: TrackWithCover) => void;
   onRemoveFromFeatured?: (track: TrackWithCover) => void;
   featuringTrackId?: string | null;
+  isAdmin?: boolean;
+  currentUserId?: string | null;
 }
 
 function SortableTrack({
@@ -42,10 +45,13 @@ function SortableTrack({
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  onRemoveFromPlaylist,
   onEdit,
   onAddToFeatured,
   onRemoveFromFeatured,
   featuringTrackId,
+  isAdmin,
+  currentUserId,
 }: Omit<TrackListViewProps, 'tracks' | 'reorderable' | 'onReorder'> & {
   track: TrackWithCover;
 }) {
@@ -71,10 +77,13 @@ function SortableTrack({
       onAddToQueue={onAddToQueue}
       onPlayNext={onPlayNext}
       onAddToPlaylist={onAddToPlaylist}
+      onRemoveFromPlaylist={onRemoveFromPlaylist}
       onEdit={onEdit}
       onAddToFeatured={onAddToFeatured}
       onRemoveFromFeatured={onRemoveFromFeatured}
       featuringTrackId={featuringTrackId}
+      isAdmin={isAdmin}
+      currentUserId={currentUserId}
       dragHandleProps={{ ...attributes, ...listeners }}
       setNodeRef={setNodeRef}
       style={style}
@@ -90,10 +99,13 @@ export default function TrackListView({
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  onRemoveFromPlaylist,
   onEdit,
   onAddToFeatured,
   onRemoveFromFeatured,
   featuringTrackId,
+  isAdmin,
+  currentUserId,
   reorderable = false,
   onReorder,
 }: TrackListViewProps) {
@@ -144,10 +156,13 @@ export default function TrackListView({
             onAddToQueue={onAddToQueue}
             onPlayNext={onPlayNext}
             onAddToPlaylist={onAddToPlaylist}
+            onRemoveFromPlaylist={onRemoveFromPlaylist}
             onEdit={onEdit}
             onAddToFeatured={onAddToFeatured}
             onRemoveFromFeatured={onRemoveFromFeatured}
             featuringTrackId={featuringTrackId}
+            isAdmin={isAdmin}
+            currentUserId={currentUserId}
           />
         ))}
       </ul>
@@ -155,6 +170,7 @@ export default function TrackListView({
     [
       items,
       onAddToPlaylist,
+      onRemoveFromPlaylist,
       onEdit,
       onAddToQueue,
       onDelete,
@@ -165,6 +181,8 @@ export default function TrackListView({
       onAddToFeatured,
       onRemoveFromFeatured,
       featuringTrackId,
+      isAdmin,
+      currentUserId,
     ],
   );
 
@@ -186,10 +204,13 @@ export default function TrackListView({
               onAddToQueue={onAddToQueue}
               onPlayNext={onPlayNext}
               onAddToPlaylist={onAddToPlaylist}
+              onRemoveFromPlaylist={onRemoveFromPlaylist}
               onEdit={onEdit}
               onAddToFeatured={onAddToFeatured}
               onRemoveFromFeatured={onRemoveFromFeatured}
               featuringTrackId={featuringTrackId}
+              isAdmin={isAdmin}
+              currentUserId={currentUserId}
             />
           ))}
         </ul>

@@ -14,6 +14,7 @@ interface TrackCardProps {
   onAddToQueue: (track: TrackWithCover) => void;
   onPlayNext: (track: TrackWithCover) => void;
   onAddToPlaylist: (track: TrackWithCover) => void;
+  isAdmin?: boolean;
 }
 
 export default function TrackCard({
@@ -23,16 +24,23 @@ export default function TrackCard({
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  isAdmin = false,
 }: TrackCardProps) {
+  const isFeaturedTrack = track.kind === 'featured' || track.isFeatured;
+  const canDeleteTrack = !isFeaturedTrack || isAdmin;
   const menuItems: Item[] = [
     {
       label: 'Add to Playlist',
       onClick: () => onAddToPlaylist(track),
     },
-    {
-      label: 'Delete Track',
-      onClick: () => onDelete(track),
-    },
+    ...(canDeleteTrack
+      ? [
+          {
+            label: 'Delete Track',
+            onClick: () => onDelete(track),
+          },
+        ]
+      : []),
     {
       label: 'Add to Queue',
       onClick: () => onAddToQueue(track),

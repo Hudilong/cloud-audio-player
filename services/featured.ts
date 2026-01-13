@@ -169,14 +169,28 @@ export async function reorderFeaturedTracks(ids: string[]) {
     }
   }
 
-  await prisma.$transaction(
-    ids.map((id, index) =>
-      prisma.playlistTrack.updateMany({
-        where: { playlistId: playlist.id, trackId: id },
-        data: { position: (index + 1) * ORDER_GAP },
-      }),
-    ),
+  const maxPosition = tracks.reduce(
+    (max, item) => Math.max(max, item.position),
+    0,
   );
+  const tempOffset = Math.max(maxPosition, ids.length * ORDER_GAP) + ORDER_GAP;
+
+  await prisma.$transaction(async (tx) => {
+    // Shift positions out of the target range to avoid unique collisions.
+    await tx.playlistTrack.updateMany({
+      where: { playlistId: playlist.id },
+      data: { position: { increment: tempOffset } },
+    });
+
+    await Promise.all(
+      ids.map((id, index) =>
+        tx.playlistTrack.updateMany({
+          where: { playlistId: playlist.id, trackId: id },
+          data: { position: (index + 1) * ORDER_GAP },
+        }),
+      ),
+    );
+  });
 
   return listFeaturedTracks();
 }
