@@ -195,7 +195,7 @@ export function useTrackDeletion({
         return;
       }
 
-      void performDeleteTrack(selectedTrack);
+      performDeleteTrack(selectedTrack);
     },
     [isTrackFeatured, performDeleteTrack],
   );
