@@ -3,32 +3,40 @@
 import React from 'react';
 import { LibraryTrack } from '@app-types/libraryTrack';
 import TrackListView from '@components/tracks/TrackListView';
+import AlertBanner from '@components/ui/AlertBanner';
 
 type FeaturedSectionProps = {
   tracks: LibraryTrack[];
   error: string | null;
+  onDismissError: () => void;
   onSelect: (track: LibraryTrack) => void;
   onAddToQueue: (track: LibraryTrack) => void;
   onPlayNext: (track: LibraryTrack) => void;
   onAddToPlaylist: (track: LibraryTrack) => void;
+  isAdmin?: boolean;
 };
 
 export default function FeaturedSection({
   tracks,
   error,
+  onDismissError,
   onSelect,
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  isAdmin,
 }: FeaturedSectionProps) {
   if (!tracks.length && !error) return null;
 
   return (
     <>
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm shadow-soft">
-          {error}
-        </div>
+        <AlertBanner
+          message={error}
+          variant="warning"
+          className="mb-4"
+          onDismiss={onDismissError}
+        />
       )}
 
       {tracks.length > 0 && (
@@ -53,6 +61,7 @@ export default function FeaturedSection({
               onAddToQueue={onAddToQueue}
               onPlayNext={onPlayNext}
               onAddToPlaylist={onAddToPlaylist}
+              isAdmin={isAdmin}
             />
           </div>
         </section>

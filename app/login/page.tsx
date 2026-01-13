@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import AuthShell from '@components/auth/AuthShell';
+import AlertBanner from '@components/ui/AlertBanner';
 import { useAuthForm } from '../hooks/useAuthForm';
 
 function LoginPage() {
@@ -52,9 +53,11 @@ function LoginPage() {
       }
     >
       {error && (
-        <p className="text-red-500 text-center font-medium" role="alert">
-          {error}
-        </p>
+        <AlertBanner
+          message={error}
+          variant="error"
+          onDismiss={() => setError('')}
+        />
       )}
 
       <button

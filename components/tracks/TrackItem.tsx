@@ -18,10 +18,13 @@ interface TrackItemProps {
   onAddToQueue: (track: TrackWithCover) => void;
   onPlayNext: (track: TrackWithCover) => void;
   onAddToPlaylist: (track: TrackWithCover) => void;
+  onRemoveFromPlaylist?: (track: TrackWithCover) => void;
   onEdit?: (track: TrackWithCover) => void;
   onAddToFeatured?: (track: TrackWithCover) => void;
   onRemoveFromFeatured?: (track: TrackWithCover) => void;
   featuringTrackId?: string | null;
+  isAdmin?: boolean;
+  currentUserId?: string | null;
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
   setNodeRef?: (element: HTMLLIElement | null) => void;
   style?: CSSProperties;
@@ -35,10 +38,13 @@ function TrackItem({
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  onRemoveFromPlaylist,
   onEdit,
   onAddToFeatured,
   onRemoveFromFeatured,
   featuringTrackId,
+  isAdmin = false,
+  currentUserId,
   dragHandleProps,
   setNodeRef,
   style,
@@ -49,6 +55,12 @@ function TrackItem({
   const isPlayingCurrent = isCurrentTrack && player?.isPlaying;
   const isFeaturedTrack = track.kind === 'featured' || track.isFeatured;
   const isFeaturing = featuringTrackId === track.id;
+  const canDeleteTrack = !isFeaturedTrack || isAdmin;
+  const canEditTrack =
+    Boolean(onEdit) &&
+    Boolean(currentUserId) &&
+    Boolean(track.userId) &&
+    track.userId === currentUserId;
   let featureLabel = 'Add to Featured';
   if (isFeaturedTrack) {
     featureLabel = 'Featured';
@@ -58,11 +70,11 @@ function TrackItem({
 
   // Define menu items
   const menuItems: Item[] = [
-    ...(onEdit
+    ...(canEditTrack
       ? [
           {
             label: 'Edit track',
-            onClick: () => onEdit(track),
+            onClick: () => onEdit?.(track),
           },
         ]
       : []),
@@ -90,10 +102,22 @@ function TrackItem({
       label: 'Add to Playlist',
       onClick: () => onAddToPlaylist(track),
     },
-    {
-      label: 'Delete Track',
-      onClick: () => onDelete(track),
-    },
+    ...(onRemoveFromPlaylist
+      ? [
+          {
+            label: 'Remove from Playlist',
+            onClick: () => onRemoveFromPlaylist(track),
+          },
+        ]
+      : []),
+    ...(canDeleteTrack
+      ? [
+          {
+            label: 'Delete Track',
+            onClick: () => onDelete(track),
+          },
+        ]
+      : []),
     {
       label: 'Add to Queue',
       onClick: () => onAddToQueue(track),

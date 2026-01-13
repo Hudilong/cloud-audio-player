@@ -10,6 +10,7 @@ import {
   createPlaylistClient,
   deletePlaylistClient,
   fetchPlaylistsClient,
+  removeTrackFromPlaylistClient,
   reorderPlaylistTracksClient,
 } from '../../services/playlistsClient';
 
@@ -161,6 +162,32 @@ export function usePlaylistManager(status: SessionStatus) {
     [notify],
   );
 
+  const removeTrackFromPlaylist = useCallback(
+    async (playlistId: string, trackId: string) => {
+      try {
+        const playlist = await removeTrackFromPlaylistClient(
+          playlistId,
+          trackId,
+        );
+
+        if (playlist) {
+          setPlaylists((prev) =>
+            prev.map((pl) => (pl.id === playlist.id ? playlist : pl)),
+          );
+        }
+
+        setPlaylistError(null);
+        return true;
+      } catch (error) {
+        const message = getFriendlyMessage(error as Error);
+        setPlaylistError(message);
+        notify(message, { variant: 'error' });
+        return false;
+      }
+    },
+    [notify],
+  );
+
   const reorderPlaylistTracks = useCallback(
     async (
       playlistId: string,
@@ -229,5 +256,6 @@ export function usePlaylistManager(status: SessionStatus) {
     defaultPlaylistFilter,
     setPlaylistError,
     reorderingPlaylistId,
+    removeTrackFromPlaylist,
   };
 }

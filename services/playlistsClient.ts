@@ -31,6 +31,19 @@ export async function addTrackToPlaylistClient(
   return data.playlist || null;
 }
 
+export async function removeTrackFromPlaylistClient(
+  playlistId: string,
+  trackId: string,
+): Promise<PlaylistWithTracks | null> {
+  const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trackId }),
+  });
+  const data = await json(res);
+  return data.playlist || null;
+}
+
 export async function createPlaylistClient(
   name: string,
 ): Promise<PlaylistWithTracks> {

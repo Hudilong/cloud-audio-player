@@ -19,11 +19,14 @@ type TracksSectionProps = {
   onAddToQueue: (track: LibraryTrack) => void;
   onPlayNext: (track: LibraryTrack) => void;
   onAddToPlaylist: (track: LibraryTrack) => void;
+  onRemoveFromPlaylist?: (track: LibraryTrack) => void;
   reorderable: boolean;
   onReorder?: (tracks: LibraryTrack[]) => void;
   onEdit: (track: LibraryTrack) => void;
   onAddToFeatured?: (track: LibraryTrack) => void;
   featuringTrackId?: string | null;
+  isAdmin?: boolean;
+  currentUserId?: string | null;
 };
 
 export default function TracksSection({
@@ -40,11 +43,14 @@ export default function TracksSection({
   onAddToQueue,
   onPlayNext,
   onAddToPlaylist,
+  onRemoveFromPlaylist,
   reorderable,
   onReorder,
   onEdit,
   onAddToFeatured,
   featuringTrackId,
+  isAdmin,
+  currentUserId,
 }: TracksSectionProps) {
   if (!(viewMode === 'songs' || activePlaylistFilter.id)) {
     return null;
@@ -108,11 +114,14 @@ export default function TracksSection({
         onAddToQueue={onAddToQueue}
         onPlayNext={onPlayNext}
         onAddToPlaylist={onAddToPlaylist}
+        onRemoveFromPlaylist={onRemoveFromPlaylist}
         reorderable={reorderable}
         onReorder={onReorder}
         onEdit={onEdit}
         onAddToFeatured={onAddToFeatured}
         featuringTrackId={featuringTrackId}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
       />
       {viewMode === 'songs' && !activePlaylistFilter.id && (
         <div

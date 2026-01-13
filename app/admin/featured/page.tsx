@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import CoverImage from '@components/ui/CoverImage';
+import AlertBanner from '@components/ui/AlertBanner';
 import { LibraryTrack } from '@app-types/libraryTrack';
 import { formatTime } from '@utils/formatTime';
 import { getFriendlyMessage, parseApiError } from '@utils/apiError';
@@ -157,16 +158,15 @@ export default function FeaturedAdminPage() {
               Library menu to add new featured tracks.
             </p>
           </div>
-          {savingOrder && (
-            <span className="text-xs text-muted">Saving order...</span>
-          )}
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
-          {error}
-        </div>
+        <AlertBanner
+          message={error}
+          variant="error"
+          onDismiss={() => setError(null)}
+        />
       )}
 
       <div className="rounded-2xl border border-borderLight dark:border-borderDark bg-panelLightAlt dark:bg-panelDark shadow-soft divide-y divide-borderLight dark:divide-borderDark">
